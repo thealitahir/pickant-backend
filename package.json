@@ -1,0 +1,31 @@
+{
+  "name": "nodeapp",
+  "version": "1.0.0",
+  "description": "nodeApp",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "nodeApp"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@sendgrid/mail": "^6.4.0",
+    "cookie-parser": "^1.4.4",
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "express-session": "^1.16.2",
+    "mongoose": "^5.7.4",
+    "ngrok": "^3.2.5",
+    "nodemailer": "^6.3.1",
+    "nodemon": "^1.19.4",
+    "npm-install-all": "^1.1.21",
+    "passport": "^0.4.0",
+    "socket.io": "^2.3.0"
+  }
+}
