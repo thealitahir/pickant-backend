@@ -7,13 +7,17 @@ const sgMail = require("@sendgrid/mail");
 sgMail.setApiKey(
   "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"
 );
-
+require("dotenv").config();
+const client = require("twilio")(
+  process.env.TWILIO_ACCOUNTSID,
+  process.env.TWILIO_AUTHTOKEN
+);
 router.post("/login", async (req, res) => {
   console.log("in login");
   console.log(req.body);
   const user = await new Promise((resolve, reject) => {
     UserModel.findOne(
-      { pliep_id: req.body.pliep_id, password: req.body.password },
+      { email: req.body.pliep_id, password: req.body.password },
       function(err, user) {
         if (!err) {
           resolve(user);
@@ -35,7 +39,7 @@ router.post("/login", async (req, res) => {
     var key = generateRandomString();
     const updated_user = await new Promise((resolve, reject) => {
       UserModel.findOneAndUpdate(
-        { pliep_id: req.body.pliep_id },
+        { email: req.body.pliep_id },
         {
           $set: {
             auth_key: key
@@ -74,22 +78,24 @@ router.post("/register", async (req, res) => {
 
   //check if email already exists
   const unique_user = await new Promise((resolve, reject) => {
-    UserModel.findOne({ email: req.body.email }, (err, user) => {
-      if (!err) {
-        resolve(user);
-      } else {
-        reject(err);
+    UserModel.findOne(
+      { $or: [{ email: req.body.email }, { mobile_no: req.body.mobile_no }] },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
       }
-    });
+    );
   });
   console.log(unique_user);
 
   if (unique_user) {
     res
       .status(409)
-      .send({ status: false, message: "Email already exists", data: {} });
+      .send({ status: false, message: "User already exists", data: {} });
   } else {
-    var pliep_id = randomAlphaNumericString(10);
     var key = generateRandomString();
     const msg = {
       to: req.body.email,
@@ -234,8 +240,54 @@ router.post("/forgetPassword", async (req, res) => {
   }
 });
 
+router.post("/sendMessage", async (req, res) => {
+  const mobile_no = req.body.mobile_no;
+  const code = generateRandomCode();
+  const msg = await new Promise((resolve, reject) => {
+    client.messages
+      .create({
+        body: `Use code ${code} to verify your phone number - Pickant`,
+        from: "(717) 415-5703",
+        to: "" + mobile_no
+      })
+      .then(message => {
+        console.log(message.sid);
+        resolve(message);
+      })
+      .catch(error => {
+        reject(error);
+      });
+  });
+  if (msg) {
+    const updated_user = await new Promise((resolve, reject) => {
+      UserModel.findOneAndUpdate(
+        { pliep_id: user.pliep_id },
+        {
+          $set: {
+            verification_code: code
+          }
+        },
+        { new: true },
+        (error, user) => {
+          if (!error) {
+            resolve(user);
+          } else {
+            reject(error);
+          }
+        }
+      );
+    });
+    res
+      .status(200)
+      .send({ status: true, message: "message sent", data: user_data });
+  } else {
+    res
+      .status(401)
+      .send({ status: false, message: "Unable to send message", data: {} });
+  }
+});
+
 router.post("/codeValidation", async (req, res) => {
-  var user = req.body;
   const user_data = await new Promise((resolve, reject) => {
     UserModel.findOne(
       { email: user.email, verification_code: user.code },
