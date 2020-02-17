@@ -9,11 +9,11 @@ var UserSchema = new Schema({
   email: { type: String, required: true },
   profile_pic: { type: Schema.Types.Mixed },
   images: [{ type: Schema.Types.Mixed }],
-  mobile_no: { type: Number, required: true },
+  mobile_no: { type: String, required: true },
   location: { lat: Schema.Types.Decimal128, lng: Schema.Types.Decimal128 },
   physical_address: { type: String, required: true },
   verification_code: { type: String },
-  auth_key: { type: String, required: true }
+  auth_key: { type: String }
 });
 
 module.exports = mongoose.model("Users", UserSchema);
