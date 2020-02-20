@@ -5,7 +5,9 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const user = require('./routes/userController');
-const product = require('./routes/productController');
+const solution = require('./routes/solutionsController');
+const category = require('./routes/categoryController');
+const subCategory = require('./routes/subCategoryController');
 const passport = require('passport');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
@@ -18,7 +20,9 @@ app.use(bodyParser.json());
 app.use(cookieParser(''));
 // Configurations
 app.use('/user', user);
-app.use('/product',product)
+app.use('/solution',solution);
+app.use('/category',category);
+app.use('/subCategory',subCategory);
 
 var opt = {
   useNewUrlParser: true

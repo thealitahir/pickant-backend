@@ -4,7 +4,8 @@ var UserModel = require("../models/user");
 const nodemailer = require("nodemailer");
 var http = require("https");
 const sgMail = require("@sendgrid/mail");
-const bodyParser = require('body-parser');
+const bodyParser = require("body-parser");
+const stripe = require("stripe")("sk_test_4eC39HqLyjWDarjtT1zdp7dc");
 sgMail.setApiKey(
   "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"
 );
@@ -19,7 +20,7 @@ router.post("/login", async (req, res) => {
   const user = await new Promise((resolve, reject) => {
     UserModel.findOne(
       { email: req.body.email, password: req.body.password },
-      function (err, user) {
+      function(err, user) {
         if (!err) {
           resolve(user);
           //res.send({ status: true, message: 'User found', data: user });
@@ -47,7 +48,7 @@ router.post("/login", async (req, res) => {
           }
         },
         { new: true },
-        function (error, auth_user) {
+        function(error, auth_user) {
           if (!error) {
             resolve(auth_user);
           } else {
@@ -102,6 +103,7 @@ router.post("/register", async (req, res) => {
     newUser.password = req.body.password;
     newUser.mobile_no = req.body.mobile_no;
     newUser.physical_address = req.body.physical_address;
+    newUser.admim = req.body.admim;
     //create new user
     const new_user = await new Promise((resolve, reject) => {
       newUser.save((err, new_user) => {
@@ -111,21 +113,21 @@ router.post("/register", async (req, res) => {
           reject(err);
         }
       });
-    });
-    console.log(new_user);
-    if (new_user) {
-      res.status(200).send({
-        status: true,
-        message: "User registered successfully",
-        data: new_user
+    })
+      .then(new_user => {
+        res.status(200).send({
+          status: true,
+          message: "User registered successfully",
+          data: new_user
+        });
+      })
+      .catch(err => {
+        res.status(401).send({
+          status: false,
+          message: "Unable to register user",
+          data: err
+        });
       });
-    } else {
-      res.status(401).send({
-        status: false,
-        message: "Unable to register user",
-        data: {}
-      });
-    }
   }
 });
 
@@ -158,7 +160,8 @@ router.post("/sendMessage", async (req, res) => {
           $set: {
             verification_code: code
           }
-        }, { upsert: true, new: true },
+        },
+        { upsert: true, new: true },
         (error, user) => {
           if (!error) {
             console.log("user updated", user);
@@ -171,14 +174,17 @@ router.post("/sendMessage", async (req, res) => {
       );
     });
     if (updated_user) {
-      res
-        .status(200)
-        .send({ status: true, message: "message sent and user updated", data: updated_user });
-    }
-    else {
-      res
-        .status(401)
-        .send({ status: false, message: "Unable to save code in db", data: {} });
+      res.status(200).send({
+        status: true,
+        message: "message sent and user updated",
+        data: updated_user
+      });
+    } else {
+      res.status(401).send({
+        status: false,
+        message: "Unable to save code in db",
+        data: {}
+      });
     }
   } else {
     res
@@ -188,7 +194,7 @@ router.post("/sendMessage", async (req, res) => {
 });
 
 router.post("/codeValidation", async (req, res) => {
-  console.log(req.body.mobile_no, req.body.code)
+  console.log(req.body.mobile_no, req.body.code);
   const user_data = await new Promise((resolve, reject) => {
     UserModel.findOne(
       { mobile_no: req.body.mobile_no, verification_code: req.body.code },
@@ -239,13 +245,34 @@ router.post("/updatePassword", async (req, res) => {
       data: updated_user
     });
   } else {
-    res.status(401).send({ status: false, message: "Unable to update password", data: {} });
+    res
+      .status(401)
+      .send({ status: false, message: "Unable to update password", data: {} });
   }
 });
 
-router.get("/test", (req, res) => {
+router.post("/getUser", (req, res) => {
+  UserModel.findOne(
+    { email: req.body.email, auth_key: req.body.auth_key },
+    function(err, user) {
+      if (!err) {
+        res.status(200).send({
+          status: true,
+          message: "User login successful",
+          data: updated_user
+        });
+      } else {
+        res
+          .status(401)
+          .send({ status: false, message: "Invalid Credentials", data: {} });
+      }
+    }
+  );
+});
+
+router.post("/test", (req, res) => {
   console.log("in test");
-  /* for (var i = 0; i < Math.pow(10, 90); i++) {}*/
+
   res.send("Hello from test");
 });
 
