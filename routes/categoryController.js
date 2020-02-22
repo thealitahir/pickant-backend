@@ -5,16 +5,24 @@ const User = require("../models/user");
 const aws = require("aws-sdk");
 const multerS3 = require("multer-s3");
 const multer = require("multer");
+var storage = multer.memoryStorage();
+var upload = multer({ storage: storage });
 const path = require("path");
-// var storage = multer.memoryStorage()
-// var upload = multer({ storage: storage });
 
-const s3 = new aws.S3({
+const s3Client = new aws.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY,
   secretAccessKey: process.env.AWS_SECRET_KEY,
   Bucket: process.env.AWS_BUCKET
 });
-
+const uploadParams = {
+  Bucket: process.env.Bucket,
+  // Key: '',
+  Key: "pickant/:file", // pass key
+  Body: null // pass file body
+};
+const s3 = {};
+s3.s3Client = s3Client;
+s3.uploadParams = uploadParams;
 //single file upload
 const profileImgUpload = multer({
   storage: multerS3({
@@ -37,6 +45,17 @@ const profileImgUpload = multer({
     checkFileType(file, cb);
   }
 }).single("profileImage");
+
+const uploadFile = (buffer, name, type) => {
+  const params = {
+    ACL: "public-read",
+    Body: buffer,
+    Bucket: process.env.AWS_BUCKET,
+    ContentType: type.mime,
+    Key: `${name}.${type.ext}`
+  };
+  return s3.upload(params).promise();
+};
 
 //check file params
 function checkFileType(file, cb) {
@@ -173,9 +192,36 @@ router.post("/addCategory", async (req, res) => {
   }
 });
 
-router.post("/test", (req, res) => {
-  console.log("in test");
-  profileImgUpload(req, res, (error) => {
+router.post("/test", upload.single("file"), (req, res) => {
+  console.log("in test", req.file);
+  s3.uploadParams.Key = `pcikant/${req.file.originalname}`;
+  // s3.uploadParams.Key = req.file.originalname
+  s3.uploadParams.Body = req.file.buffer;
+  s3.s3Client.upload(s3.uploadParams, (err, data) => {
+    if (err) {
+      res.status(500).json({ error: "Error -> " + err });
+    }
+    res.json({
+      message: "File uploaded successfully!",
+      data: `https://s3.amazonaws.com/pickant/${req.file.originalname}`
+    });
+  });
+  /*const form = new multiparty.Form();
+    form.parse(req, async (error, fields, files) => {
+      if (error) throw new Error(error);
+      try {
+        const path = files.file[0].path;
+        const buffer = fs.readFileSync(path);
+        const type = fileType(buffer);
+        const timestamp = Date.now().toString();
+        const fileName = `bucketFolder/${timestamp}-lg`;
+        const data = await uploadFile(buffer, fileName, type);
+        return res.status(200).send(data);
+      } catch (error) {
+        return res.status(400).send(error);
+      }
+    }); */
+  /* profileImgUpload(req, res, (error) => {
     console.log("requestOkokok", req.file);
     console.log("error", error);
     if (error) {
@@ -199,7 +245,7 @@ router.post("/test", (req, res) => {
         });
       }
     }
-  });
+  }); */
 });
 
 module.exports = router;

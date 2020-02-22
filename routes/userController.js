@@ -80,16 +80,13 @@ router.post("/register", async (req, res) => {
 
   //check if email already exists
   const unique_user = await new Promise((resolve, reject) => {
-    UserModel.findOne(
-      { $or: [{ email: req.body.email }, { mobile_no: req.body.mobile_no }] },
-      (err, user) => {
-        if (!err) {
-          resolve(user);
-        } else {
-          reject(err);
-        }
+    UserModel.findOne({ email: req.body.email }, (err, user) => {
+      if (!err) {
+        resolve(user);
+      } else {
+        reject(err);
       }
-    );
+    });
   });
   if (unique_user) {
     res
@@ -103,7 +100,7 @@ router.post("/register", async (req, res) => {
     newUser.password = req.body.password;
     newUser.mobile_no = req.body.mobile_no;
     newUser.physical_address = req.body.physical_address;
-    newUser.admim = req.body.admim;
+    newUser.admin = req.body.admin;
     //create new user
     const new_user = await new Promise((resolve, reject) => {
       newUser.save((err, new_user) => {
@@ -134,62 +131,82 @@ router.post("/register", async (req, res) => {
 router.post("/sendMessage", async (req, res) => {
   const mobile_no = req.body.mobile_no;
   console.log(mobile_no);
-  const code = generateRandomCode();
-  const msg = await new Promise((resolve, reject) => {
-    client.messages
-      .create({
-        body: `Use code ${code} to verify your phone number - Pickant`,
-        from: "(717) 415-5703",
-        to: mobile_no
-      })
-      .then(message => {
-        console.log(message.sid);
-        resolve(message);
-      })
-      .catch(error => {
-        console.log(error);
-        reject(error);
-      });
-  });
-  if (msg) {
-    console.log("+++++++++ updating db++++++++++++++++++");
-    const updated_user = await new Promise((resolve, reject) => {
-      UserModel.findOneAndUpdate(
-        { mobile_no: mobile_no },
-        {
-          $set: {
-            verification_code: code
-          }
-        },
-        { upsert: true, new: true },
-        (error, user) => {
-          if (!error) {
-            console.log("user updated", user);
-            resolve(user);
-          } else {
-            console.log("error occured", error);
-            reject(error);
-          }
+  const unique_user = await new Promise((resolve, reject) => {
+    UserModel.findOne(
+      { mobile_no: req.body.mobile_no },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
         }
-      );
+      }
+    );
+  });
+  console.log(unique_user)
+  console.log(unique_user.email)
+  if (!unique_user || !unique_user.email) {
+    const code = generateRandomCode();
+    const msg = await new Promise((resolve, reject) => {
+      client.messages
+        .create({
+          body: `Use code ${code} to verify your phone number - Pickant`,
+          from: "(717) 415-5703",
+          to: mobile_no
+        })
+        .then(message => {
+          console.log(message.sid);
+          resolve(message);
+        })
+        .catch(error => {
+          console.log(error);
+          reject(error);
+        });
     });
-    if (updated_user) {
-      res.status(200).send({
-        status: true,
-        message: "message sent and user updated",
-        data: updated_user
+    if (msg) {
+      console.log("+++++++++ updating db++++++++++++++++++");
+      const updated_user = await new Promise((resolve, reject) => {
+        UserModel.findOneAndUpdate(
+          { mobile_no: mobile_no },
+          {
+            $set: {
+              verification_code: code
+            }
+          },
+          { upsert: true, new: true },
+          (error, user) => {
+            if (!error) {
+              console.log("user updated", user);
+              resolve(user);
+            } else {
+              console.log("error occured", error);
+              reject(error);
+            }
+          }
+        );
       });
+      if (updated_user) {
+        res.status(200).send({
+          status: true,
+          message: "message sent and user updated",
+          data: updated_user
+        });
+      } else {
+        res.status(401).send({
+          status: false,
+          message: "Unable to save code in db",
+          data: {}
+        });
+      }
     } else {
-      res.status(401).send({
-        status: false,
-        message: "Unable to save code in db",
-        data: {}
-      });
+      res
+        .status(401)
+        .send({ status: false, message: "Unable to send message", data: {} });
     }
   } else {
     res
-      .status(401)
-      .send({ status: false, message: "Unable to send message", data: {} });
+      .status(409)
+      .send({ status: false, message: "User already exists", data: {} });
   }
 });
 
@@ -222,7 +239,7 @@ router.post("/updatePassword", async (req, res) => {
   var user = req.body;
   const updated_user = await new Promise((resolve, reject) => {
     UserModel.findOneAndUpdate(
-      { email: user.email },
+      { mobmobile_noile: user.mobile_no },
       {
         $set: {
           password: user.password
