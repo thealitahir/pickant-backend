@@ -239,7 +239,7 @@ router.post("/updatePassword", async (req, res) => {
   var user = req.body;
   const updated_user = await new Promise((resolve, reject) => {
     UserModel.findOneAndUpdate(
-      { mobmobile_noile: user.mobile_no },
+      { mobile_no: user.mobile_no },
       {
         $set: {
           password: user.password
