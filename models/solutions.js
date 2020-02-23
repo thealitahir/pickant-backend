@@ -5,6 +5,7 @@ var SolutionSchema = new Schema({
   category: { type: String, required: true },
   sub_category: { type: String, required: true },
   pickup_street_address: { type: String, required: true },
+  pickup_postal_address: { type: String, required: true },
   pickup_city: { type: String, required: true },
   pickup_region: { type: String },
   pickup_date: { type: String, required: true },
@@ -14,6 +15,7 @@ var SolutionSchema = new Schema({
     lng: Schema.Types.Decimal128
   },
   delivery_street_address: { type: String, required: true },
+  delivery_postal_address: { type: String, required: true },
   delivery_city: { type: String, required: true },
   delivery_region: { type: String },
   delivery_date: { type: String, required: true },

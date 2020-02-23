@@ -112,6 +112,7 @@ router.post("/addSolution", async (req, res) => {
   if (valid_user) {
     console.log("user validated");
     var solution_details = req.body;
+    console.log(solution_details);
     var solution = new SolutionModel();
     solution.category = solution_details.category;
     solution.sub_category = solution_details.sub_category;
@@ -121,8 +122,10 @@ router.post("/addSolution", async (req, res) => {
     solution.pickup_date = solution_details.pickup_date;
     solution.pickup_country = solution_details.pickup_country;
     solution.pickup_location.lat = solution_details.pickup_lat;
+    solution.pickup_postal_address = solution_details.pickup_postal_address;
     solution.pickup_location.lng = solution_details.pickup_lng;
     solution.delivery_street_address = solution_details.delivery_street_address;
+    solution.delivery_postal_address = solution_details.delivery_postal_address;
     solution.delivery_city = solution_details.delivery_city;
     solution.delivery_region = solution_details.delivery_region;
     solution.delivery_date = solution_details.delivery_date;
