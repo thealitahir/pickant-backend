@@ -101,6 +101,8 @@ router.post("/register", async (req, res) => {
     newUser.mobile_no = req.body.mobile_no;
     newUser.physical_address = req.body.physical_address;
     newUser.admin = req.body.admin;
+    newUser.identity_flag = req.body.identity_flag;
+
     //create new user
     const new_user = await new Promise((resolve, reject) => {
       newUser.save((err, new_user) => {
@@ -132,19 +134,16 @@ router.post("/sendMessage", async (req, res) => {
   const mobile_no = req.body.mobile_no;
   console.log(mobile_no);
   const unique_user = await new Promise((resolve, reject) => {
-    UserModel.findOne(
-      { mobile_no: req.body.mobile_no },
-      (err, user) => {
-        if (!err) {
-          resolve(user);
-        } else {
-          reject(err);
-        }
+    UserModel.findOne({ mobile_no: req.body.mobile_no }, (err, user) => {
+      if (!err) {
+        resolve(user);
+      } else {
+        reject(err);
       }
-    );
+    });
   });
-  console.log(unique_user)
-  console.log(unique_user.email)
+  console.log(unique_user);
+  console.log(unique_user.email);
   if (!unique_user || !unique_user.email) {
     const code = generateRandomCode();
     const msg = await new Promise((resolve, reject) => {
