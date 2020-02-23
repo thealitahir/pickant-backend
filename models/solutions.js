@@ -26,7 +26,9 @@ var SolutionSchema = new Schema({
   },
   description: { type: String },
   user: { type: mongoose.Schema.ObjectId, ref: "Users" },
-  user_role: { type: String, required: true }
+  user_role: { type: String, required: true },
+  status:{type:String, required:true, default:"Pending"},
+  accepted_by: {type: mongoose.Schema.ObjectId, ref: "Users"}
 });
 
 module.exports = mongoose.model("Solutions", SolutionSchema);

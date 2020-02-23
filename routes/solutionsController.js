@@ -93,6 +93,49 @@ router.get(
   }
 );
 
+router.get("/getUserSolutions/:user_id/:auth_key", async (req, res) => {
+  console.log("in get solution details");
+  var valid_user = await new Promise((resolve, reject) => {
+    UserModel.findOne(
+      { _id: req.params.user_id, auth_key: req.params.auth_key },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
+      }
+    );
+  });
+  if (valid_user) {
+    SolutionModel.findOne({
+      user: req.params.user_id
+    })
+      .populate("user")
+      .exec((err, data) => {
+        if (!err) {
+          res.status(200).send({
+            status: true,
+            message: "solutions found",
+            data: data
+          });
+        } else {
+          res.status(400).send({
+            status: false,
+            message: "unable to find solutions",
+            data: {}
+          });
+        }
+      });
+  } else {
+    res.status(401).send({
+      status: false,
+      message: "Authentication failed",
+      data: {}
+    });
+  }
+});
+
 router.post("/addSolution", async (req, res) => {
   console.log("in add solution");
   console.log(req.body);
@@ -157,11 +200,67 @@ router.post("/addSolution", async (req, res) => {
     }
   } else {
     res
-      .status(40)
+      .status(401)
       .send({ status: false, message: "User authentication failed", data: {} });
   }
 });
 
+router.put("/solutionAccepted", async (req, res) => {
+  console.log("in solutionAccepted", req.body);
+  const solution = req.body;
+  var valid_user = await new Promise((resolve, reject) => {
+    UserModel.findOne(
+      { _id: solution.user_id, auth_key: solution.auth_key },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
+      }
+    );
+  });
+  if (valid_user) {
+    const updated_solution = await new Promise((resolve, reject) => {
+      SolutionModel.findOneAndUpdate(
+        { _id: solution.solution_id },
+        {
+          $set: {
+            status: "Accepted",
+            accepted_by: ObjectID(solution.accepted_by)
+          }
+        },
+        { new: true },
+        (err, data) => {
+          if (!err) {
+            resolve(data);
+          } else {
+            reject(err);
+          }
+        }
+      );
+    });
+    if (updated_solution) {
+      res.status(200).send({
+        status: true,
+        message: "Solution updated successfuly",
+        data: updated_solution
+      });
+    } else {
+      res.status(409).send({
+        status: false,
+        message: "unable to update solution",
+        data: {}
+      });
+    }
+  } else {
+    res.status(401).send({
+      status: false,
+      message: "Authentication failed",
+      data: {}
+    });
+  }
+});
 router.post("/test", (req, res) => {
   console.log("in test");
   UserModel.findOne({ _id: "5e4a250e594e090510f65cb9" }, (err, data) => {

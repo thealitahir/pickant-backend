@@ -76,8 +76,6 @@ router.post("/login", async (req, res) => {
 
 router.post("/register", async (req, res) => {
   console.log("in register");
-  console.log(req.body);
-
   //check if email already exists
   const unique_user = await new Promise((resolve, reject) => {
     UserModel.findOne({ email: req.body.email }, (err, user) => {
@@ -93,7 +91,8 @@ router.post("/register", async (req, res) => {
       .status(409)
       .send({ status: false, message: "User already exists", data: {} });
   } else {
-    var newUser = new UserModel();
+    console.log("creating new user");
+    var newUser = {};
     newUser.firstName = req.body.firstName;
     newUser.lastName = req.body.lastName;
     newUser.email = req.body.email;
@@ -102,16 +101,21 @@ router.post("/register", async (req, res) => {
     newUser.physical_address = req.body.physical_address;
     newUser.admin = req.body.admin;
     newUser.identity_flag = req.body.identity_flag;
-
+    console.log(newUser);
     //create new user
     const new_user = await new Promise((resolve, reject) => {
-      newUser.save((err, new_user) => {
-        if (!err) {
-          resolve(new_user);
-        } else {
-          reject(err);
+      UserModel.findOneAndUpdate(
+        { mobile_no: req.body.mobile_no },
+        newUser,
+        { upsert: true, new: true },
+        (err, new_user) => {
+          if (!err) {
+            resolve(new_user);
+          } else {
+            reject(err);
+          }
         }
-      });
+      );
     })
       .then(new_user => {
         res.status(200).send({
@@ -132,6 +136,7 @@ router.post("/register", async (req, res) => {
 
 router.post("/sendMessage", async (req, res) => {
   const mobile_no = req.body.mobile_no;
+  var send_code = false;
   console.log(mobile_no);
   const unique_user = await new Promise((resolve, reject) => {
     UserModel.findOne({ mobile_no: req.body.mobile_no }, (err, user) => {
@@ -142,9 +147,14 @@ router.post("/sendMessage", async (req, res) => {
       }
     });
   });
-  console.log(unique_user);
-  console.log(unique_user.email);
-  if (!unique_user || !unique_user.email) {
+  if (!unique_user) {
+    send_code = true;
+  } else if (unique_user && !unique_user.email) {
+    send_code = true;
+  } else {
+    send_code = false;
+  }
+  if (send_code) {
     const code = generateRandomCode();
     const msg = await new Promise((resolve, reject) => {
       client.messages
@@ -234,7 +244,7 @@ router.post("/codeValidation", async (req, res) => {
   }
 });
 
-router.post("/updatePassword", async (req, res) => {
+router.put("/updatePassword", async (req, res) => {
   var user = req.body;
   const updated_user = await new Promise((resolve, reject) => {
     UserModel.findOneAndUpdate(
@@ -264,6 +274,59 @@ router.post("/updatePassword", async (req, res) => {
     res
       .status(401)
       .send({ status: false, message: "Unable to update password", data: {} });
+  }
+});
+
+router.put("/updateUser", async (req, res) => {
+  console.log("upadte usre", req.body);
+  var valid_user = await new Promise((resolve, reject) => {
+    UserModel.findOne(
+      { _id: req.body.user_id, auth_key: req.body.auth_key },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
+      }
+    );
+  });
+  if (valid_user) {
+    const updated_user = await new Promise((resolve, reject) => {
+      UserModel.findOneAndUpdate(
+        { _id: req.body.user_id },
+        req.body.update_data,
+        { new: true },
+        (err, data) => {
+          if (!err) {
+            resolve(data);
+          } else {
+            reject(err);
+          }
+        }
+      );
+    });
+    if (updated_user) {
+      res.status(200).send({
+        status: true,
+        message: "User updated successfuly",
+        data: updated_user
+      });
+    } else {
+      res
+        .status(401)
+        .send({
+          status: false,
+          message: "Unable to update user",
+          data: {}
+        });
+    }
+  } else {
+    res.status(401).send({
+      status: false,
+      message: "Authentication failed",
+      data: {}
+    });
   }
 });
 
