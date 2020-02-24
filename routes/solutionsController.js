@@ -19,7 +19,7 @@ router.get("/getAllSolutions/:user_id/:auth_key/:role", async (req, res) => {
     );
   });
   if (valid_user) {
-    SolutionModel.find({ user_role: req.params.role, status:"Accepted" })
+    SolutionModel.find({ user_role: req.params.role, status:"Pending" })
       .populate("user")
       .exec((err, data) => {
         if (!err) {
@@ -109,7 +109,7 @@ router.get("/getUserSolutions/:user_id/:auth_key", async (req, res) => {
   });
   if (valid_user) {
     SolutionModel.findOne({
-      user: req.params.user_id, status:"Accepted"
+      user: req.params.user_id, status:"Pending"
     })
       .populate("user")
       .exec((err, data) => {
