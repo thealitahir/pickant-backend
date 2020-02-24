@@ -313,13 +313,11 @@ router.put("/updateUser", async (req, res) => {
         data: updated_user
       });
     } else {
-      res
-        .status(401)
-        .send({
-          status: false,
-          message: "Unable to update user",
-          data: {}
-        });
+      res.status(401).send({
+        status: false,
+        message: "Unable to update user",
+        data: {}
+      });
     }
   } else {
     res.status(401).send({

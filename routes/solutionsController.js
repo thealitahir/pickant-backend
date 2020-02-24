@@ -19,7 +19,7 @@ router.get("/getAllSolutions/:user_id/:auth_key/:role", async (req, res) => {
     );
   });
   if (valid_user) {
-    SolutionModel.find({ user_role: req.params.role })
+    SolutionModel.find({ user_role: req.params.role, status:"Accepted" })
       .populate("user")
       .exec((err, data) => {
         if (!err) {
@@ -109,7 +109,7 @@ router.get("/getUserSolutions/:user_id/:auth_key", async (req, res) => {
   });
   if (valid_user) {
     SolutionModel.findOne({
-      user: req.params.user_id
+      user: req.params.user_id, status:"Accepted"
     })
       .populate("user")
       .exec((err, data) => {
@@ -135,6 +135,52 @@ router.get("/getUserSolutions/:user_id/:auth_key", async (req, res) => {
     });
   }
 });
+
+router.get(
+  "/getSolutionUsers/:solution_id/:user_id/:auth_key",
+  async (req, res) => {
+    console.log("in get solution users details");
+    var valid_user = await new Promise((resolve, reject) => {
+      UserModel.findOne(
+        { _id: req.params.user_id, auth_key: req.params.auth_key },
+        (err, user) => {
+          if (!err) {
+            resolve(user);
+          } else {
+            reject(err);
+          }
+        }
+      );
+    });
+    if (valid_user) {
+      SolutionModel.findOne({
+        _id: req.params.solution_id, status:"Accepted"
+      })
+        .populate("user").populate("accepted_by")
+        .exec((err, data) => {
+          if (!err) {
+            res.status(200).send({
+              status: true,
+              message: "solutions found",
+              data: data
+            });
+          } else {
+            res.status(400).send({
+              status: false,
+              message: "unable to find solutions",
+              data: {}
+            });
+          }
+        });
+    } else {
+      res.status(401).send({
+        status: false,
+        message: "Authentication failed",
+        data: {}
+      });
+    }
+  }
+);
 
 router.post("/addSolution", async (req, res) => {
   console.log("in add solution");
@@ -261,6 +307,7 @@ router.put("/solutionAccepted", async (req, res) => {
     });
   }
 });
+
 router.post("/test", (req, res) => {
   console.log("in test");
   UserModel.findOne({ _id: "5e4a250e594e090510f65cb9" }, (err, data) => {
