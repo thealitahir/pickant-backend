@@ -151,7 +151,10 @@ router.post("/sendMessage", async (req, res) => {
     send_code = true;
   } else if (unique_user && !unique_user.email) {
     send_code = true;
-  } else {
+  }else if(req.body.forget_password){
+    send_code = true;
+  } 
+  else {
     send_code = false;
   }
   if (send_code) {
