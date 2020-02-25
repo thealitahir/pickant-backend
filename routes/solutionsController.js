@@ -19,7 +19,7 @@ router.get("/getAllSolutions/:user_id/:auth_key/:role", async (req, res) => {
     );
   });
   if (valid_user) {
-    SolutionModel.find({ user_role: req.params.role, status:"Pending" })
+    SolutionModel.find({ user_role: req.params.role, status: "Pending" })
       .populate("user")
       .exec((err, data) => {
         if (!err) {
@@ -96,7 +96,7 @@ router.get(
 router.get("/getUserSolutions/:user_id/:auth_key", async (req, res) => {
   console.log("in get solution details");
   var valid_user = await new Promise((resolve, reject) => {
-    UserModel.findOne(
+    UserModel.find(
       { _id: req.params.user_id, auth_key: req.params.auth_key },
       (err, user) => {
         if (!err) {
@@ -108,8 +108,9 @@ router.get("/getUserSolutions/:user_id/:auth_key", async (req, res) => {
     );
   });
   if (valid_user) {
-    SolutionModel.findOne({
-      user: req.params.user_id, status:"Pending"
+    SolutionModel.find({
+      user: req.params.user_id,
+      status: "Pending"
     })
       .populate("user")
       .exec((err, data) => {
@@ -154,9 +155,11 @@ router.get(
     });
     if (valid_user) {
       SolutionModel.findOne({
-        _id: req.params.solution_id, status:"Accepted"
+        _id: req.params.solution_id,
+        status: "Accepted"
       })
-        .populate("user").populate("accepted_by")
+        .populate("user")
+        .populate("accepted_by")
         .exec((err, data) => {
           if (!err) {
             res.status(200).send({
@@ -205,7 +208,8 @@ router.post("/addSolution", async (req, res) => {
     var solution = new SolutionModel();
     solution.category = solution_details.category;
     solution.sub_category = solution_details.sub_category;
-    solution.sub_category_price_dollar = solution_details.sub_category_price_dollar;
+    solution.sub_category_price_dollar =
+      solution_details.sub_category_price_dollar;
     solution.sub_category_price_euro = solution_details.sub_category_price_euro;
     solution.sub_category_price_fr = solution_details.sub_category_price_fr;
     solution.pickup_street_address = solution_details.pickup_street_address;
