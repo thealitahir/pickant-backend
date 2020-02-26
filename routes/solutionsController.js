@@ -53,16 +53,13 @@ router.get(
   async (req, res) => {
     console.log("in get solution details");
     var valid_user = await new Promise((resolve, reject) => {
-      UserModel.findOne(
-        { _id: req.params.user_id, auth_key: req.params.auth_key },
-        (err, user) => {
-          if (!err) {
-            resolve(user);
-          } else {
-            reject(err);
-          }
+      UserModel.findOne({ _id: req.params.user_id }, (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
         }
-      );
+      });
     });
     if (valid_user) {
       console.log("user validated");
@@ -264,16 +261,14 @@ router.put("/solutionAccepted", async (req, res) => {
   console.log("in solutionAccepted", req.body);
   const solution = req.body;
   var valid_user = await new Promise((resolve, reject) => {
-    UserModel.findOne(
-      { _id: solution.user_id, auth_key: solution.auth_key },
-      (err, user) => {
-        if (!err) {
-          resolve(user);
-        } else {
-          reject(err);
-        }
+    UserModel.findOne({ _id: solution.user_id }, (err, user) => {
+      if (!err) {
+        console.log("USER", user);
+        resolve(user);
+      } else {
+        reject(err);
       }
-    );
+    });
   });
   if (valid_user) {
     const updated_solution = await new Promise((resolve, reject) => {
@@ -296,14 +291,25 @@ router.put("/solutionAccepted", async (req, res) => {
       );
     });
     if (updated_solution) {
+      console.log("Valid", valid_user);
       const userAccepted = await new Promise((resolve, reject) => {
-        UserModel.findOne({ _id: updated_solution.user }, (err, user) => {
+        UserModel.findOne({ _id: solution.accepted_by }, (err, user) => {
           if (!err) {
+            console.log(
+              "userAccept",
+              user.firstName,
+              "+++",
+              user.mobile_no,
+              "+++",
+              valid_user.firstName,
+              "++++",
+              valid_user.mobile_no
+            );
             client.messages
               .create({
-                body: `You order has been accepted by ${user.firstName} You can contact your supplier through email:${user.email} or through mobile number : ${user.mobile_no} `,
+                body: `<b>Pickant App:</b> Your offer is accepted by ${user.firstName} You can contact your supplier through email:${user.email} or through mobile number : ${user.mobile_no} `,
                 from: "(717) 415-5703",
-                to: user.mobile_no
+                to: valid_user.mobile_no
               })
               .then(message => {
                 resolve(message);
@@ -316,7 +322,6 @@ router.put("/solutionAccepted", async (req, res) => {
           }
         });
       });
-
       res.status(200).send({
         status: true,
         message: "Solution updated successfuly",
