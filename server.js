@@ -10,6 +10,7 @@ const category = require('./routes/categoryController');
 const subCategory = require('./routes/subCategoryController');
 const passport = require('passport');
 const cookieParser = require('cookie-parser');
+const fileRoute = require('./routes/fileUpload');
 require('dotenv').config();
 
 
@@ -23,6 +24,7 @@ app.use('/user', user);
 app.use('/solution',solution);
 app.use('/category',category);
 app.use('/subCategory',subCategory);
+app.use('/fileUpload', fileRoute);
 
 var opt = {
   useNewUrlParser: true
