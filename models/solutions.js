@@ -3,7 +3,7 @@ var mongoose = require("mongoose"),
 
 var SolutionSchema = new Schema({
   category: { type: String, required: true },
-  sub_category: { type: String, required: true },
+  sub_category: { en: Schema.Types.String, fr: Schema.Types.String },
   sub_category_price_dollar: { type: String, required: true },
   sub_category_price_euro: { type: String, required: true },
   sub_category_price_fr: { type: String, required: true },
@@ -30,8 +30,8 @@ var SolutionSchema = new Schema({
   description: { type: String },
   user: { type: mongoose.Schema.ObjectId, ref: "Users" },
   user_role: { type: String, required: true },
-  status:{type:String, required:true, default:"Pending"},
-  accepted_by: {type: mongoose.Schema.ObjectId, ref: "Users"}
+  status: { type: String, required: true, default: "Pending" },
+  accepted_by: { type: mongoose.Schema.ObjectId, ref: "Users" }
 });
 
 module.exports = mongoose.model("Solutions", SolutionSchema);

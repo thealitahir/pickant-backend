@@ -351,7 +351,7 @@ router.post("/getUser", (req, res) => {
       } else {
         res
           .status(401)
-          .send({ status: false, message: "Invalid Credentials", data: {} });
+          .send({ status: false, message: {en:"Invalid Credentials",fr:"Les informations invalids"}, data: {} });
       }
     }
   );

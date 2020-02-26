@@ -206,7 +206,8 @@ router.post("/addSolution", async (req, res) => {
     console.log(solution_details);
     var solution = new SolutionModel();
     solution.category = solution_details.category;
-    solution.sub_category = solution_details.sub_category;
+    solution.sub_category.en = solution_details.en;
+    solution.sub_category.fr = solution_details.fr;
     solution.sub_category_price_dollar =
       solution_details.sub_category_price_dollar;
     solution.sub_category_price_euro = solution_details.sub_category_price_euro;
