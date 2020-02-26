@@ -16,11 +16,16 @@ const client = require("twilio")(
 );
 router.post("/login", async (req, res) => {
   console.log("in login");
-  console.log(req.body);
+  let creds = req.body;
+  if(!creds.email){
+    creds.email = "x";
+  }
+  if(!creds.password){
+    creds.email = "x";
+  }
   const user = await new Promise((resolve, reject) => {
-    UserModel.findOne(
-      { email: req.body.email, password: req.body.password },
-      function(err, user) {
+    UserModel.findOne({ email: creds.email, password: creds.password },
+      (err, user) => {
         if (!err) {
           resolve(user);
           //res.send({ status: true, message: 'User found', data: user });
@@ -38,6 +43,8 @@ router.post("/login", async (req, res) => {
       .status(401)
       .send({ status: false, message: "Invalid Credentials", data: {} });
   } else {
+    console.log(req.body);
+    console.log(user);
     var key = generateRandomString();
     const updated_user = await new Promise((resolve, reject) => {
       UserModel.findOneAndUpdate(
