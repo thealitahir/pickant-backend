@@ -3,7 +3,10 @@ var router = express.Router();
 var SolutionModel = require("../models/solutions");
 var UserModel = require("../models/user");
 var ObjectID = require("objectid");
-
+const client = require("twilio")(
+  process.env.TWILIO_ACCOUNTSID,
+  process.env.TWILIO_AUTHTOKEN
+);
 router.get("/getAllSolutions/:user_id/:auth_key/:role", async (req, res) => {
   console.log("in get all solutions");
   var valid_user = await new Promise((resolve, reject) => {
@@ -109,7 +112,7 @@ router.get("/getUserSolutions/:user_id/:auth_key", async (req, res) => {
   });
   if (valid_user) {
     SolutionModel.find({
-      user: req.params.user_id,
+      user: req.params.user_id
     })
       .populate("user")
       .exec((err, data) => {
@@ -293,6 +296,27 @@ router.put("/solutionAccepted", async (req, res) => {
       );
     });
     if (updated_solution) {
+      const userAccepted = await new Promise((resolve, reject) => {
+        UserModel.findOne({ _id: updated_solution.user }, (err, user) => {
+          if (!err) {
+            client.messages
+              .create({
+                body: `You order has been accepted by ${user.firstName} You can contact your supplier through email:${user.email} or through mobile number : ${user.mobile_no} `,
+                from: "(717) 415-5703",
+                to: user.mobile_no
+              })
+              .then(message => {
+                resolve(message);
+              })
+              .catch(error => {
+                reject(error);
+              });
+          } else {
+            reject(error);
+          }
+        });
+      });
+
       res.status(200).send({
         status: true,
         message: "Solution updated successfuly",
