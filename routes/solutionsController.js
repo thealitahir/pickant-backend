@@ -307,7 +307,7 @@ router.put("/solutionAccepted", async (req, res) => {
             );
             client.messages
               .create({
-                body: `<b>Pickant App:</b> Your offer is accepted by ${user.firstName} You can contact your supplier through email:${user.email} or through mobile number : ${user.mobile_no} `,
+                body: `Pickant App: Your offer is accepted by ${user.firstName} You can contact your supplier through email:${user.email} or through mobile number : ${user.mobile_no} `,
                 from: "(717) 415-5703",
                 to: valid_user.mobile_no
               })
