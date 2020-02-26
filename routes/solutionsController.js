@@ -110,7 +110,6 @@ router.get("/getUserSolutions/:user_id/:auth_key", async (req, res) => {
   if (valid_user) {
     SolutionModel.find({
       user: req.params.user_id,
-      status: "Pending"
     })
       .populate("user")
       .exec((err, data) => {
