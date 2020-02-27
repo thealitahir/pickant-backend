@@ -24,7 +24,7 @@ app.use('/user', user);
 app.use('/solution',solution);
 app.use('/category',category);
 app.use('/subCategory',subCategory);
-app.use('/fileUpload', fileRoute);
+app.use('/file', fileRoute);
 
 var opt = {
   useNewUrlParser: true
