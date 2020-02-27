@@ -1,4 +1,4 @@
-require("dotenv").config();
+require('dotenv').config();
 const express = require("express");
 const router = express.Router();
 const UserModel = require("../models/user");
@@ -6,10 +6,12 @@ const UserModel = require("../models/user");
 const aws = require("aws-sdk");
 const multer = require("multer");
 const multerS3 = require("multer-s3");
+const accessKeyId = process.env.AWS_ACCESS_KEY;
+const secretAccessKey = process.env.AWS_SECRET_KEY;
 
 aws.config.update({
-  accessKeyId: "AKIAJBJ57PPJ54T2BREA",
-  secretAccessKey: "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",
+  accessKeyId: accessKeyId,
+  secretAccessKey: secretAccessKey,
   region: "us-east-2"
 });
 
@@ -52,7 +54,6 @@ const singleUpload = upload.single("image");
 
 router.post("/imageUpload/:user_id", function(req, res) {
   singleUpload(req, res, async function(err) {
-    console.log("Salman Saleem " + req.file);
     if (err) {
       return res.status(400).send({
         errors: { message: "File upload error", detail: err.message }
