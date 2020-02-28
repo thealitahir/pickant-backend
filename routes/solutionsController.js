@@ -209,7 +209,7 @@ router.post("/addSolution", async (req, res) => {
     solution.sub_category.en = solution_details.en;
     solution.sub_category.fr = solution_details.fr;
     solution.sub_category_price_dollar =
-      solution_details.sub_category_price_dollar;
+    solution_details.sub_category_price_dollar;
     solution.sub_category_price_euro = solution_details.sub_category_price_euro;
     solution.sub_category_price_fr = solution_details.sub_category_price_fr;
     solution.pickup_street_address = solution_details.pickup_street_address;
