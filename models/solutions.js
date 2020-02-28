@@ -17,12 +17,12 @@ var SolutionSchema = new Schema({
     lat: Schema.Types.Decimal128,
     lng: Schema.Types.Decimal128
   },
-  delivery_street_address: { type: String, required: true },
-  delivery_postal_address: { type: String, required: true },
-  delivery_city: { type: String, required: true },
+  delivery_street_address: { type: String },
+  delivery_postal_address: { type: String },
+  delivery_city: { type: String },
   delivery_region: { type: String },
-  delivery_date: { type: String, required: true },
-  delivery_country: { type: String, required: true },
+  delivery_date: { type: String },
+  delivery_country: { type: String },
   delivery_location: {
     lat: Schema.Types.Decimal128,
     lng: Schema.Types.Decimal128
