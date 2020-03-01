@@ -357,6 +357,29 @@ router.post("/getUser", (req, res) => {
   );
 });
 
+
+router.get("/getAllUsers", (req, res) => {
+  UserModel.find(
+    { },
+    function(err, users) {
+      if (!err) {
+        res.status(200).send({
+          status: true,
+          message: "all users fetched",
+          data: users
+        });
+      } else {
+        res
+          .status(401)
+          .send({ status: false, message: {en:"Invalid Credentials",fr:"Les informations invalids"}, data: {} });
+      }
+    }
+  );
+});
+
+
+
+
 router.post("/test", (req, res) => {
   console.log("in test");
 
