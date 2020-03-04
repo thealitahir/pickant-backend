@@ -27,7 +27,7 @@ var SolutionSchema = new Schema({
     lat: Schema.Types.Decimal128,
     lng: Schema.Types.Decimal128
   },
-  description: { type: String },
+  description: { type: Schema.Types.Mixed },
   user: { type: mongoose.Schema.ObjectId, ref: "Users" },
   user_role: { type: String, required: true },
   status: { type: String, required: true, default: "Pending" },

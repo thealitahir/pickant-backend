@@ -4,7 +4,9 @@ var UserModel = require("../models/user");
 const nodemailer = require("nodemailer");
 var http = require("https");
 const sgMail = require("@sendgrid/mail");
+var uploadFile = require("./fileUpload");
 const bodyParser = require("body-parser");
+const multer = require("multer");
 const stripe = require("stripe")("sk_test_4eC39HqLyjWDarjtT1zdp7dc");
 sgMail.setApiKey(
   "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"
@@ -14,17 +16,21 @@ const client = require("twilio")(
   process.env.TWILIO_ACCOUNTSID,
   process.env.TWILIO_AUTHTOKEN
 );
+var storage = multer.memoryStorage();
+var multipleUpload = multer({ storage: storage }).array("file");
+
 router.post("/login", async (req, res) => {
   console.log("in login");
   let creds = req.body;
-  if(!creds.email){
+  if (!creds.email) {
     creds.email = "x";
   }
-  if(!creds.password){
+  if (!creds.password) {
     creds.email = "x";
   }
   const user = await new Promise((resolve, reject) => {
-    UserModel.findOne({ email: creds.email, password: creds.password },
+    UserModel.findOne(
+      { email: creds.email, password: creds.password },
       (err, user) => {
         if (!err) {
           resolve(user);
@@ -158,10 +164,9 @@ router.post("/sendMessage", async (req, res) => {
     send_code = true;
   } else if (unique_user && !unique_user.email) {
     send_code = true;
-  }else if(req.body.forget_password){
+  } else if (req.body.forget_password) {
     send_code = true;
-  } 
-  else {
+  } else {
     send_code = false;
   }
   if (send_code) {
@@ -287,55 +292,78 @@ router.put("/updatePassword", async (req, res) => {
   }
 });
 
-router.put("/updateUser", async (req, res) => {
-  console.log("upadte usre", req.body);
-  var valid_user = await new Promise((resolve, reject) => {
-    UserModel.findOne(
-      { _id: req.body.user_id, auth_key: req.body.auth_key },
-      (err, user) => {
-        if (!err) {
-          resolve(user);
-        } else {
-          reject(err);
-        }
+router.put("/updateUser", multipleUpload, async (req, res) => {
+  console.log("upadte user");
+  const files = req.files;
+  var update_data = req.body.update_data;
+  const fileUploadResponse = await new Promise((resolve, reject) => {
+    uploadFile(files, "users/", (err, data) => {
+      if (!err) {
+        resolve(data);
+      } else {
+        reject(err);
       }
-    );
-  });
-  if (valid_user) {
-    const updated_user = await new Promise((resolve, reject) => {
-      UserModel.findOneAndUpdate(
-        { _id: req.body.user_id },
-        req.body.update_data,
-        { new: true },
-        (err, data) => {
-          if (!err) {
-            resolve(data);
-          } else {
-            reject(err);
-          }
-        }
-      );
     });
-    if (updated_user) {
-      res.status(200).send({
-        status: true,
-        message: "User updated successfuly",
-        data: updated_user
+  })
+    .then(async fileUploadResponse => {
+      var valid_user = await new Promise((resolve, reject) => {
+        UserModel.findOne(
+          { _id: req.body.user_id, auth_key: req.body.auth_key },
+          (err, user) => {
+            if (!err) {
+              resolve(user);
+            } else {
+              reject(err);
+            }
+          }
+        );
       });
-    } else {
-      res.status(401).send({
+      if (valid_user) {
+        console.log(fileUploadResponse.locations[0]);
+        update_data.profile_pic = fileUploadResponse.locations[0];
+        console.log(update_data);
+        const updated_user = await new Promise((resolve, reject) => {
+          UserModel.findOneAndUpdate(
+            { _id: req.body.user_id },
+            update_data,
+            { new: true },
+            (err, data) => {
+              if (!err) {
+                resolve(data);
+              } else {
+                reject(err);
+              }
+            }
+          );
+        });
+        if (updated_user) {
+          res.status(200).send({
+            status: true,
+            message: "User updated successfuly",
+            data: updated_user
+          });
+        } else {
+          res.status(401).send({
+            status: false,
+            message: "Unable to update user",
+            data: {}
+          });
+        }
+      } else {
+        res.status(401).send({
+          status: false,
+          message: "Authentication failed",
+          data: {}
+        });
+      }
+    })
+    .catch(err => {
+      res.status(422).send({
         status: false,
-        message: "Unable to update user",
+        message: err.errors[0],
         data: {}
       });
-    }
-  } else {
-    res.status(401).send({
-      status: false,
-      message: "Authentication failed",
-      data: {}
     });
-  }
 });
 
 router.post("/getUser", (req, res) => {
@@ -349,33 +377,39 @@ router.post("/getUser", (req, res) => {
           data: updated_user
         });
       } else {
-        res
-          .status(401)
-          .send({ status: false, message: {en:"Invalid Credentials",fr:"Les informations invalids"}, data: {} });
+        res.status(401).send({
+          status: false,
+          message: {
+            en: "Invalid Credentials",
+            fr: "Les informations invalids"
+          },
+          data: {}
+        });
       }
     }
   );
 });
 
 router.get("/getAllUsers", (req, res) => {
-  UserModel.find(
-    { },
-    function(err, users) {
-      if (!err) {
-        res.status(200).send({
-          status: true,
-          message: "all users fetched",
-          data: users
-        });
-      } else {
-        res
-          .status(401)
-          .send({ status: false, message: {en:"Invalid Credentials",fr:"Les informations invalids"}, data: {} });
-      }
+  UserModel.find({}, function(err, users) {
+    if (!err) {
+      res.status(200).send({
+        status: true,
+        message: "all users fetched",
+        data: users
+      });
+    } else {
+      res.status(401).send({
+        status: false,
+        message: {
+          en: "Invalid Credentials",
+          fr: "Les informations invalids"
+        },
+        data: {}
+      });
     }
-  );
+  });
 });
-
 
 router.post("/test", (req, res) => {
   console.log("in test");

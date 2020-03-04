@@ -1,59 +1,92 @@
-require('dotenv').config();
+require("dotenv").config();
 const express = require("express");
-const router = express.Router();
-const UserModel = require("../models/user");
 
 const aws = require("aws-sdk");
 const multer = require("multer");
-const multerS3 = require("multer-s3");
 const accessKeyId = process.env.AWS_ACCESS_KEY;
 const secretAccessKey = process.env.AWS_SECRET_KEY;
+const region = process.env.REGION;
 
-aws.config.update({
-  accessKeyId: accessKeyId,
-  secretAccessKey: secretAccessKey,
-  region: "us-east-2"
-});
-
-const s3 = new aws.S3();
-
-const fileFilter = (req, file, cb) => {
+const fileFilter = file => {
+  console.log(file.mimetype);
   if (
     file.mimetype == "image/jpeg" ||
     file.mimetype == "image/png" ||
     file.mimetype == "image/jpg" ||
     file.mimetype === null
   ) {
-    cb(null, true);
+    return true;
   } else {
-    cb(new Error("Invalid image type, only JPEG and png are allowed"), false);
+    return false;
   }
 };
 
-const upload = multer({
+var storage = multer.memoryStorage();
+/* var upload = multer({
   fileFilter,
-  storage: multerS3({
-    s3: s3,
-    bucket: "aptake",
-    acl: "public-read",
-    metadata: function(req, file, cb) {
-      cb(null, { fieldName: "TESTING_META_DATA" });
-    },
-    key: function(req, file, cb) {
-      console.log(file);
-      cb(
-        null,
-        `images/${req.params.user_id}/` + file.originalname,
-        Date.now().toString()
-      );
+  storage: storage
+}); */
+var multipleUpload = multer({ storage: storage }).array("file");
+
+module.exports = async function(files, path, cb) {
+  console.log("in file upload");
+  var data;
+  var errors = [];
+  var locations = [];
+  var count = 0;
+  let s3bucket = new aws.S3({
+    accessKeyId: accessKeyId,
+    secretAccessKey: secretAccessKey,
+    region: region
+  });
+  files.map(async item => {
+    if (!fileFilter(item)) {
+      console.log("invalid file");
+      count++;
+      errors.push("Invalid file format, must be jpeg, jpg or png");
+    } else {
+      console.log("valid file");
+      var params = {
+        Bucket: process.env.AWS_BUCKET,
+        Key: path + item.originalname,
+        Body: item.buffer,
+        ContentType: item.mimetype,
+        ACL: "public-read"
+      };
+      var upload = await new Promise((resolve, reject) => {
+        s3bucket.upload(params, function(err, data) {
+          if (!err) {
+            resolve(data);
+          } else {
+            reject(err);
+          }
+        });
+      });
+      if (upload) {
+        locations.push(upload.Location);
+        count++;
+      } else {
+        errors.push(upload);
+        count++;
+      }
     }
-  })
-});
+    if (count == files.length && errors.length < 1) {
+      data = { error: false, locations };
+      cb(null, data);
+    } else if (count == files.length && errors.length > 0) {
+      data = { error: true, errors };
+      cb(data);
+    }
+  });
+  /* var params = {
+    Bucket: process.env.AWS_BUCKET,
+    Key: 'test2/'+file.originalname,
+    Body: file.buffer,
+    ContentType: file.mimetype,
+    ACL: "public-read"
+  }; */
 
-const singleUpload = upload.single("image");
-
-router.post("/imageUpload/:user_id", function(req, res) {
-  singleUpload(req, res, async function(err) {
+  /* singleUpload(req, res, async function(err) {
     if (err) {
       return res.status(400).send({
         errors: { message: "File upload error", detail: err.message }
@@ -92,7 +125,5 @@ router.post("/imageUpload/:user_id", function(req, res) {
         data: {}
       });
     }
-  });
-});
-
-module.exports = router;
+  }); */
+};
