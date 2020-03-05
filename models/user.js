@@ -4,9 +4,9 @@ var mongoose = require("mongoose"),
 var UserSchema = new Schema({
   firstName: { type: String, required: true },
   lastName: { type: String },
-  identity_no: { type: String },
-  identity_flag:{type:Boolean, required: true},
+  identity_flag:{type:Boolean, required: false},
   verified:{type:Boolean,required:true, default:false},
+  verified_by:{type:Schema.Types.ObjectId},
   password: { type: String, required: true },
   email: { type: String, required: true },
   profile_pic: { type: String },
@@ -16,7 +16,7 @@ var UserSchema = new Schema({
   physical_address: { type: String },
   verification_code: { type: String },
   auth_key: { type: String },
-  admin:{type: Boolean, required:true}
+  admin:{type: Boolean, required:false}
 });
 
 module.exports = mongoose.model("Users", UserSchema);

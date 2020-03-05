@@ -7,6 +7,12 @@ const client = require("twilio")(
   process.env.TWILIO_ACCOUNTSID,
   process.env.TWILIO_AUTHTOKEN
 );
+const multer = require("multer");
+var uploadFile = require("./fileUpload");
+
+var storage = multer.memoryStorage();
+var multipleUpload = multer({ storage: storage }).array("file");
+
 router.get("/getAllSolutions/:user_id/:auth_key/:role", async (req, res) => {
   console.log("in get all solutions");
   var valid_user = await new Promise((resolve, reject) => {
@@ -186,7 +192,8 @@ router.get(
 
 router.post("/addSolution", async (req, res) => {
   console.log("in add solution");
-  console.log(req.body);
+  var solution = new SolutionModel();
+  solution = JSON.parse(req.body.new_solution);
   var valid_user = await new Promise((resolve, reject) => {
     UserModel.findOne(
       { _id: req.body.user_id, auth_key: req.body.auth_key },
@@ -201,56 +208,78 @@ router.post("/addSolution", async (req, res) => {
   });
 
   if (valid_user) {
-    console.log("user validated");
-    var solution_details = req.body;
-    console.log(solution_details);
-    var solution = new SolutionModel();
-    solution.category = solution_details.category;
-    solution.sub_category.en = solution_details.en;
-    solution.sub_category.fr = solution_details.fr;
-    solution.sub_category_price_dollar =
-    solution_details.sub_category_price_dollar;
-    solution.sub_category_price_euro = solution_details.sub_category_price_euro;
-    solution.sub_category_price_fr = solution_details.sub_category_price_fr;
-    solution.pickup_street_address = solution_details.pickup_street_address;
-    solution.pickup_city = solution_details.pickup_city;
-    solution.pickup_region = solution_details.pickup_region;
-    solution.pickup_date = solution_details.pickup_date;
-    solution.pickup_country = solution_details.pickup_country;
-    solution.pickup_location.lat = solution_details.pickup_lat;
-    solution.pickup_postal_address = solution_details.pickup_postal_address;
-    solution.pickup_location.lng = solution_details.pickup_lng;
-    solution.delivery_street_address = solution_details.delivery_street_address;
-    solution.delivery_postal_address = solution_details.delivery_postal_address;
-    solution.delivery_city = solution_details.delivery_city;
-    solution.delivery_region = solution_details.delivery_region;
-    solution.delivery_date = solution_details.delivery_date;
-    solution.delivery_country = solution_details.delivery_country;
-    solution.delivery_location.lat = solution_details.delivery_lat;
-    solution.delivery_location.lng = solution_details.delivery_lng;
-    solution.description = solution_details.description;
-    solution.user = ObjectID(solution_details.user_id);
-    solution.user_role = solution_details.user_role;
-    const saved_solution = await new Promise((resolve, reject) => {
-      solution.save((err, new_solution) => {
+    const fileUploadResponse = await new Promise((resolve, reject) => {
+      uploadFile(files, "categories/", (err, data) => {
         if (!err) {
-          resolve(new_solution);
+          resolve(data);
         } else {
           reject(err);
         }
       });
-    });
-    if (saved_solution) {
-      res.status(200).send({
-        status: true,
-        message: "solution saved",
-        data: saved_solution
+    })
+      .then(async fileUploadResponse => {
+        /* var solution_details = req.body;
+        console.log(solution_details);
+        solution.category = solution_details.category;
+        solution.sub_category.en = solution_details.en;
+        solution.sub_category.fr = solution_details.fr;
+        solution.sub_category_price_dollar =
+          solution_details.sub_category_price_dollar;
+        solution.sub_category_price_euro =
+          solution_details.sub_category_price_euro;
+        solution.sub_category_price_fr = solution_details.sub_category_price_fr;
+        solution.pickup_street_address = solution_details.pickup_street_address;
+        solution.pickup_city = solution_details.pickup_city;
+        solution.pickup_region = solution_details.pickup_region;
+        solution.pickup_date = solution_details.pickup_date;
+        solution.pickup_country = solution_details.pickup_country;
+        solution.pickup_location.lat = solution_details.pickup_lat;
+        solution.pickup_postal_address = solution_details.pickup_postal_address;
+        solution.pickup_location.lng = solution_details.pickup_lng;
+        solution.delivery_street_address =
+          solution_details.delivery_street_address;
+        solution.delivery_postal_address =
+          solution_details.delivery_postal_address;
+        solution.delivery_city = solution_details.delivery_city;
+        solution.delivery_region = solution_details.delivery_region;
+        solution.delivery_date = solution_details.delivery_date;
+        solution.delivery_country = solution_details.delivery_country;
+        solution.delivery_location.lat = solution_details.delivery_lat;
+        solution.delivery_location.lng = solution_details.delivery_lng;
+        solution.description = solution_details.description;
+        solution.user = ObjectID(solution_details.user_id);
+        solution.user_role = solution_details.user_role; */
+        solution.images = fileUploadResponse.locations;
+        const saved_solution = await new Promise((resolve, reject) => {
+          solution.save((err, new_solution) => {
+            if (!err) {
+              resolve(new_solution);
+            } else {
+              reject(err);
+            }
+          });
+        });
+        if (saved_solution) {
+          res.status(200).send({
+            status: true,
+            message: "solution saved",
+            data: saved_solution
+          });
+        } else {
+          res.status(400).send({
+            status: false,
+            message: "Unable to save solution",
+            data: {}
+          });
+        }
+      })
+      .catch(err => {
+        res.status(422).send({
+          status: false,
+          message: err.errors,
+          data: {}
+        });
       });
-    } else {
-      res
-        .status(400)
-        .send({ status: false, message: "Unable to save solution", data: {} });
-    }
   } else {
     res
       .status(401)

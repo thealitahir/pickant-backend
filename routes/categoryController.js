@@ -86,19 +86,23 @@ router.get("/getCategory/:category_id/:user_id", async (req, res) => {
 router.post("/addCategory", multipleUpload, async (req, res) => {
   console.log("in add category");
   const files = req.files;
-  const new_category = req.body;
+  var new_category = new Category();
+  new_category = JSON.parse(req.body.new_category);
   var valid_user = await new Promise((resolve, reject) => {
-    UserModel.find({ _id: req.params.user_id }, (err, user) => {
-      if (!err) {
-        resolve(user);
-      } else {
-        reject(err);
+    UserModel.find(
+      { _id: req.body.user_id, auth_key: req.body.auth_key },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
       }
-    });
+    );
   });
-  if (valid_user.admin) {
+  if (valid_user && valid_user.admin) {
     const fileUploadResponse = await new Promise((resolve, reject) => {
-      uploadFile(files, "users/", (err, data) => {
+      uploadFile(files, "categories/", (err, data) => {
         if (!err) {
           resolve(data);
         } else {
@@ -107,15 +111,18 @@ router.post("/addCategory", multipleUpload, async (req, res) => {
       });
     })
       .then(async fileUploadResponse => {
-        var category = new Category();
+        /* var category = new Category();
         category.name_en = new_category.name_en;
         category.name_fr = new_category.name_fr;
         category.status = new_category.status;
         category.created_at = new Date.now();
         category.image = fileUploadResponse.locations[0];
-        category.updated_at = new Date.now();
+        category.updated_at = new Date.now(); */
+        new_category.image = fileUploadResponse.locations[0];
+        new_category.created_at = new Date.now();
+        new_category.updated_at = new Date.now();
         const saved_category = await new Promise((resolve, reject) => {
-          category.save((err, added_category) => {
+          new_category.save((err, added_category) => {
             if (!err) {
               resolve(added_category);
             } else {
@@ -140,7 +147,7 @@ router.post("/addCategory", multipleUpload, async (req, res) => {
       .catch(err => {
         res.status(422).send({
           status: false,
-          message: err.errors[0],
+          message: err.errors,
           data: {}
         });
       });
@@ -152,7 +159,6 @@ router.post("/addCategory", multipleUpload, async (req, res) => {
     });
   }
 });
-
 
 router.post("/test", (req, res) => {});
 

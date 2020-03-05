@@ -87,11 +87,16 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.post("/register", async (req, res) => {
+router.post("/register", multipleUpload, async (req, res) => {
   console.log("in register");
   //check if email already exists
+  var files = req.files;
+  var newUser = {};
+  newUser = JSON.parse(req.body.new_user);
+  console.log(files);
+  console.log(newUser);
   const unique_user = await new Promise((resolve, reject) => {
-    UserModel.findOne({ email: req.body.email }, (err, user) => {
+    UserModel.findOne({ email: newUser.email }, (err, user) => {
       if (!err) {
         resolve(user);
       } else {
@@ -105,20 +110,42 @@ router.post("/register", async (req, res) => {
       .send({ status: false, message: "User already exists", data: {} });
   } else {
     console.log("creating new user");
-    var newUser = {};
-    newUser.firstName = req.body.firstName;
+    if (newUser.identity_flag) {
+      const fileUploadResponse = await new Promise((resolve, reject) => {
+        uploadFile(files, "users/", (err, data) => {
+          if (!err) {
+            resolve(data);
+          } else {
+            reject(err);
+          }
+        });
+      })
+        .then(async fileUploadResponse => {
+          newUser.images = fileUploadResponse.locations;
+        })
+        .catch(err => {
+          res.status(422).send({
+            status: false,
+            message: err.errors[0],
+            data: {}
+          });
+        });
+    }
+
+    /* newUser.firstName = req.body.firstName;
     newUser.lastName = req.body.lastName;
     newUser.email = req.body.email;
     newUser.password = req.body.password;
     newUser.mobile_no = req.body.mobile_no;
     newUser.physical_address = req.body.physical_address;
     newUser.admin = req.body.admin;
-    newUser.identity_flag = req.body.identity_flag;
+    newUser.identity_flag = req.body.identity_flag; */
+    console.log("********************");
     console.log(newUser);
     //create new user
     const new_user = await new Promise((resolve, reject) => {
       UserModel.findOneAndUpdate(
-        { mobile_no: req.body.mobile_no },
+        { mobile_no: newUser.mobile_no },
         newUser,
         { upsert: true, new: true },
         (err, new_user) => {
@@ -292,10 +319,70 @@ router.put("/updatePassword", async (req, res) => {
   }
 });
 
+router.put("/verifyUser", async (req, res) => {
+  const user_data = await new Promise((resolve, reject) => {
+    UserModel.findOne(
+      { _id: req.body.id, auth_key: req.body.auth_key },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
+      }
+    );
+  });
+  if (user_data && user_data.admin) {
+    const updated_user = await new Promise((resolve, reject) => {
+      UserModel.findOneAndUpdate(
+        { _id: req.body.user_id },
+        {
+          $set: {
+            verified: true,
+            verified_by: user_data._id
+          }
+        },
+        { new: true },
+        (error, user) => {
+          if (!error) {
+            console.log("user updated", user);
+            resolve(user);
+          } else {
+            console.log("error occured", error);
+            reject(error);
+          }
+        }
+      );
+    });
+    if(updated_user){
+      res.status(200).send({
+        status: true,
+        message: "User verified",
+        data: updated_user
+      });
+    }else{
+      res.status(401).send({
+        status: false,
+        message: "User verification failed",
+        data: {}
+      });
+    }
+  } else {
+    res.status(403).send({
+      status: false,
+      message: "Access Denied",
+      data: {}
+    });
+  }
+});
+
 router.put("/updateUser", multipleUpload, async (req, res) => {
   console.log("upadte user");
   const files = req.files;
-  var update_data = req.body.update_data;
+  console.log(req.files);
+  console.log("+++++++++++++++");
+  console.log(JSON.parse(req.body.update_data));
+  var update_data = JSON.parse(req.body.update_data);
   const fileUploadResponse = await new Promise((resolve, reject) => {
     uploadFile(files, "users/", (err, data) => {
       if (!err) {
@@ -366,15 +453,73 @@ router.put("/updateUser", multipleUpload, async (req, res) => {
     });
 });
 
-router.post("/getUser", (req, res) => {
-  UserModel.findOne(
-    { email: req.body.email, auth_key: req.body.auth_key },
-    function(err, user) {
+router.get("/getUser/:id/:user_id/:auth_key", async (req, res) => {
+  const user_data = await new Promise((resolve, reject) => {
+    UserModel.findOne(
+      { _id: req.params.id, auth_key: req.params.auth_key },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
+      }
+    );
+  });
+  if(user_data){
+    UserModel.findOne(
+      { _id: req.params.user_id },
+      function(err, user) {
+        if (!err) {
+          var end_user = {};
+          end_user.firstName = user.firstName
+          end_user.lastName = user.lastName
+          end_user.email = user.email
+          end_user.mobile_no = user.mobile_no
+          end_user.profile_pic = user.profile_pic
+          if(user_data.admin){
+            end_user.images = user.images
+          }
+          res.status(200).send({
+            status: true,
+            message: "User login successful",
+            data: end_user
+          });
+        } else {
+          res.status(401).send({
+            status: false,
+            message: {
+              en: "Invalid Credentials",
+              fr: "Les informations invalids"
+            },
+            data: {}
+          });
+        }
+      }
+    );
+  }
+});
+
+router.get("/getAllUsers/:id/:auth_key", async (req, res) => {
+  const user_data = await new Promise((resolve, reject) => {
+    UserModel.findOne(
+      { _id: req.params.id, auth_key: req.params.auth_key },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
+      }
+    );
+  });
+  if(user_data && user_data.admin){
+    UserModel.find({}, function(err, users) {
       if (!err) {
         res.status(200).send({
           status: true,
-          message: "User login successful",
-          data: updated_user
+          message: "all users fetched",
+          data: users
         });
       } else {
         res.status(401).send({
@@ -386,32 +531,18 @@ router.post("/getUser", (req, res) => {
           data: {}
         });
       }
-    }
-  );
+    });
+  }else{
+    res.status(403).send({
+      status: false,
+      message: "Access Denied",
+      data: {}
+    });
+  }
+  
 });
 
-router.get("/getAllUsers", (req, res) => {
-  UserModel.find({}, function(err, users) {
-    if (!err) {
-      res.status(200).send({
-        status: true,
-        message: "all users fetched",
-        data: users
-      });
-    } else {
-      res.status(401).send({
-        status: false,
-        message: {
-          en: "Invalid Credentials",
-          fr: "Les informations invalids"
-        },
-        data: {}
-      });
-    }
-  });
-});
-
-router.post("/test", (req, res) => {
+router.get("/test", (req, res) => {
   console.log("in test");
 
   res.send("Hello from test");

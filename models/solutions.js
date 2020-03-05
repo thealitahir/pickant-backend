@@ -31,7 +31,8 @@ var SolutionSchema = new Schema({
   user: { type: mongoose.Schema.ObjectId, ref: "Users" },
   user_role: { type: String, required: true },
   status: { type: String, required: true, default: "Pending" },
-  accepted_by: { type: mongoose.Schema.ObjectId, ref: "Users" }
+  accepted_by: { type: mongoose.Schema.ObjectId, ref: "Users" },
+  images: [{ type: Schema.Types.Mixed }]
 });
 
 module.exports = mongoose.model("Solutions", SolutionSchema);

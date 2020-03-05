@@ -12,7 +12,11 @@ const passport = require('passport');
 const cookieParser = require('cookie-parser');
 const fileRoute = require('./routes/fileUpload');
 require('dotenv').config();
-
+const ngrok = require('ngrok');
+(async function() {
+  const url = await ngrok.connect(3010);
+  console.log(url);
+})();
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
