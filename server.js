@@ -11,6 +11,7 @@ const subCategory = require('./routes/subCategoryController');
 const passport = require('passport');
 const cookieParser = require('cookie-parser');
 const fileRoute = require('./routes/fileUpload');
+const payment = require('./routes/payment');
 require('dotenv').config();
 const ngrok = require('ngrok');
 (async function() {
@@ -29,6 +30,7 @@ app.use('/solution',solution);
 app.use('/category',category);
 app.use('/subCategory',subCategory);
 app.use('/file', fileRoute);
+app.use('/payment', payment);
 
 var opt = {
   useNewUrlParser: true

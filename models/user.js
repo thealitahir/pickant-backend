@@ -16,7 +16,8 @@ var UserSchema = new Schema({
   physical_address: { type: String },
   verification_code: { type: String },
   auth_key: { type: String },
-  admin:{type: Boolean, required:false}
+  admin:{type: Boolean, required:false},
+  wallet:{type: Schema.Types.Decimal128, required: true, default:15.00},
 });
 
 module.exports = mongoose.model("Users", UserSchema);
