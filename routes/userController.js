@@ -320,26 +320,28 @@ router.put("/updatePassword", async (req, res) => {
 });
 
 router.put("/verifyUser", async (req, res) => {
-  const user_data = await new Promise((resolve, reject) => {
-    UserModel.findOne(
-      { _id: req.body.id, auth_key: req.body.auth_key },
-      (err, user) => {
-        if (!err) {
-          resolve(user);
-        } else {
-          reject(err);
-        }
-      }
-    );
-  });
-  if (user_data && user_data.admin) {
+  // const user_data = await new Promise((resolve, reject) => {
+    // UserModel.findOne(
+    //   { _id: req.body.id },
+    //   // { _id: req.body.id, auth_key: req.body.auth_key },
+    //   (err, user) => {
+    //     if (!err) {
+    //       resolve(user);
+    //     } else {
+    //       reject(err);
+    //     }
+    //   }
+    // );
+  // });
+  // if (user_data && user_data.admin) {
+  // if (user_data) {
     const updated_user = await new Promise((resolve, reject) => {
       UserModel.findOneAndUpdate(
         { _id: req.body.user_id },
         {
           $set: {
-            verified: true,
-            verified_by: user_data._id
+            verified: req.body.verifyFlag,
+            verified_by: req.body.user_id
           }
         },
         { new: true },
@@ -354,26 +356,26 @@ router.put("/verifyUser", async (req, res) => {
         }
       );
     });
-    if(updated_user){
+    if (updated_user) {
       res.status(200).send({
         status: true,
         message: "User verified",
         data: updated_user
       });
-    }else{
+    } else {
       res.status(401).send({
         status: false,
         message: "User verification failed",
         data: {}
       });
     }
-  } else {
-    res.status(403).send({
-      status: false,
-      message: "Access Denied",
-      data: {}
-    });
-  }
+  // } else {
+  //   res.status(403).send({
+  //     status: false,
+  //     message: "Access Denied",
+  //     data: {}
+  //   });
+  // }
 });
 
 router.put("/updateUser", multipleUpload, async (req, res) => {
@@ -466,60 +468,22 @@ router.get("/getUser/:id/:user_id/:auth_key", async (req, res) => {
       }
     );
   });
-  if(user_data){
-    UserModel.findOne(
-      { _id: req.params.user_id },
-      function(err, user) {
-        if (!err) {
-          var end_user = {};
-          end_user.firstName = user.firstName
-          end_user.lastName = user.lastName
-          end_user.email = user.email
-          end_user.mobile_no = user.mobile_no
-          end_user.profile_pic = user.profile_pic
-          if(user_data.admin){
-            end_user.images = user.images
-          }
-          res.status(200).send({
-            status: true,
-            message: "User login successful",
-            data: end_user
-          });
-        } else {
-          res.status(401).send({
-            status: false,
-            message: {
-              en: "Invalid Credentials",
-              fr: "Les informations invalids"
-            },
-            data: {}
-          });
-        }
-      }
-    );
-  }
-});
-
-router.get("/getAllUsers/:id/:auth_key", async (req, res) => {
-  const user_data = await new Promise((resolve, reject) => {
-    UserModel.findOne(
-      { _id: req.params.id, auth_key: req.params.auth_key },
-      (err, user) => {
-        if (!err) {
-          resolve(user);
-        } else {
-          reject(err);
-        }
-      }
-    );
-  });
-  if(user_data && user_data.admin){
-    UserModel.find({}, function(err, users) {
+  if (user_data) {
+    UserModel.findOne({ _id: req.params.user_id }, function(err, user) {
       if (!err) {
+        var end_user = {};
+        end_user.firstName = user.firstName;
+        end_user.lastName = user.lastName;
+        end_user.email = user.email;
+        end_user.mobile_no = user.mobile_no;
+        end_user.profile_pic = user.profile_pic;
+        if (user_data.admin) {
+          end_user.images = user.images;
+        }
         res.status(200).send({
           status: true,
-          message: "all users fetched",
-          data: users
+          message: "User login successful",
+          data: end_user
         });
       } else {
         res.status(401).send({
@@ -532,14 +496,49 @@ router.get("/getAllUsers/:id/:auth_key", async (req, res) => {
         });
       }
     });
-  }else{
-    res.status(403).send({
-      status: false,
-      message: "Access Denied",
-      data: {}
-    });
   }
-  
+});
+
+// router.get("/getAllUsers/:id/:auth_key", async (req, res) => {
+router.get("/getAllUsers", async (req, res) => {
+  // const user_data = await new Promise((resolve, reject) => {
+  //   UserModel.findOne(
+  //     { _id: req.params.id, auth_key: req.params.auth_key },
+  //     (err, user) => {
+  //       if (!err) {
+  //         resolve(user);
+  //       } else {
+  //         reject(err);
+  //       }
+  //     }
+  //   );
+  // });
+  // if(user_data && user_data.admin){
+  UserModel.find({}, function(err, users) {
+    if (!err) {
+      res.status(200).send({
+        status: true,
+        message: "all users fetched",
+        data: users
+      });
+    } else {
+      res.status(401).send({
+        status: false,
+        message: {
+          en: "Invalid Credentials",
+          fr: "Les informations invalids"
+        },
+        data: {}
+      });
+    }
+  });
+  // }else{
+  //   res.status(403).send({
+  //     status: false,
+  //     message: "Access Denied",
+  //     data: {}
+  //   });
+  // }
 });
 
 router.get("/test", (req, res) => {
