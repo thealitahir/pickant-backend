@@ -15,6 +15,7 @@ var multipleUpload = multer({ storage: storage }).array("file");
 
 router.get("/getAllSolutions/:user_id/:auth_key/:role", async (req, res) => {
   console.log("in get all solutions");
+  console.log(req.params.user_id,req.params.auth_key,req.params.role);
   var valid_user = await new Promise((resolve, reject) => {
     UserModel.findOne(
       { _id: req.params.user_id, auth_key: req.params.auth_key },
@@ -195,11 +196,11 @@ router.post("/addSolution", multipleUpload, async (req, res) => {
   const files = req.files;
   console.log(req.files);
   var solution = new SolutionModel();
-  solution = JSON.parse(req.body.new_solution);
+  var solution_details = JSON.parse(req.body.new_solution);
   console.log(solution);
   var valid_user = await new Promise((resolve, reject) => {
     UserModel.findOne(
-      { _id: req.body.user_id, auth_key: req.body.auth_key },
+      { _id: req.body.user, auth_key: req.body.auth_key },
       (err, user) => {
         if (!err) {
           resolve(user);
@@ -221,15 +222,13 @@ router.post("/addSolution", multipleUpload, async (req, res) => {
       });
     })
       .then(async fileUploadResponse => {
-        /* var solution_details = req.body;
-        console.log(solution_details);
         solution.category = solution_details.category;
         solution.sub_category.en = solution_details.en;
         solution.sub_category.fr = solution_details.fr;
         solution.sub_category_price_dollar =
-          solution_details.sub_category_price_dollar;
+        solution_details.sub_category_price_dollar;
         solution.sub_category_price_euro =
-          solution_details.sub_category_price_euro;
+        solution_details.sub_category_price_euro;
         solution.sub_category_price_fr = solution_details.sub_category_price_fr;
         solution.pickup_street_address = solution_details.pickup_street_address;
         solution.pickup_city = solution_details.pickup_city;
@@ -237,12 +236,12 @@ router.post("/addSolution", multipleUpload, async (req, res) => {
         solution.pickup_date = solution_details.pickup_date;
         solution.pickup_country = solution_details.pickup_country;
         solution.pickup_location.lat = solution_details.pickup_lat;
-        solution.pickup_postal_address = solution_details.pickup_postal_address;
         solution.pickup_location.lng = solution_details.pickup_lng;
+        solution.pickup_postal_address = solution_details.pickup_postal_address;
         solution.delivery_street_address =
-          solution_details.delivery_street_address;
+        solution_details.delivery_street_address;
         solution.delivery_postal_address =
-          solution_details.delivery_postal_address;
+        solution_details.delivery_postal_address;
         solution.delivery_city = solution_details.delivery_city;
         solution.delivery_region = solution_details.delivery_region;
         solution.delivery_date = solution_details.delivery_date;
@@ -250,15 +249,13 @@ router.post("/addSolution", multipleUpload, async (req, res) => {
         solution.delivery_location.lat = solution_details.delivery_lat;
         solution.delivery_location.lng = solution_details.delivery_lng;
         solution.description = solution_details.description;
-        solution.user = ObjectID(solution_details.user_id);
-        solution.user_role = solution_details.user_role; */
+        solution.user = ObjectID(solution_details.user);
+        solution.user_role = solution_details.user_role;
         solution.images = fileUploadResponse.locations;
         console.log(solution);
         const saved_solution = await new Promise((resolve, reject) => {
-          SolutionModel.findOneAndUpdate(
-            {},
+          SolutionModel.create(
             solution,
-            { upsert: true, new: true },
             (err, new_solution) => {
               if (!err) {
                 resolve(new_solution);
