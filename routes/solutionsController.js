@@ -190,10 +190,13 @@ router.get(
   }
 );
 
-router.post("/addSolution", async (req, res) => {
+router.post("/addSolution", multipleUpload, async (req, res) => {
   console.log("in add solution");
+  const files = req.files;
+  console.log(req.files);
   var solution = new SolutionModel();
   solution = JSON.parse(req.body.new_solution);
+  console.log(solution);
   var valid_user = await new Promise((resolve, reject) => {
     UserModel.findOne(
       { _id: req.body.user_id, auth_key: req.body.auth_key },
@@ -250,16 +253,23 @@ router.post("/addSolution", async (req, res) => {
         solution.user = ObjectID(solution_details.user_id);
         solution.user_role = solution_details.user_role; */
         solution.images = fileUploadResponse.locations;
+        console.log(solution);
         const saved_solution = await new Promise((resolve, reject) => {
-          solution.save((err, new_solution) => {
-            if (!err) {
-              resolve(new_solution);
-            } else {
-              reject(err);
+          SolutionModel.findOneAndUpdate(
+            {},
+            solution,
+            { upsert: true, new: true },
+            (err, new_solution) => {
+              if (!err) {
+                resolve(new_solution);
+              } else {
+                reject(err);
+              }
             }
-          });
+          );
         });
         if (saved_solution) {
+          console.log(saved_solution);
           res.status(200).send({
             status: true,
             message: "solution saved",
@@ -274,6 +284,8 @@ router.post("/addSolution", async (req, res) => {
         }
       })
       .catch(err => {
+        console.log("error occured");
+        console.log(err);
         res.status(422).send({
           status: false,
           message: err.errors,
