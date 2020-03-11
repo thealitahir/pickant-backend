@@ -15,7 +15,7 @@ var multipleUpload = multer({ storage: storage }).array("file");
 
 router.get("/getAllSolutions/:user_id/:auth_key/:role", async (req, res) => {
   console.log("in get all solutions");
-  console.log(req.params.user_id,req.params.auth_key,req.params.role);
+  console.log(req.params.user_id, req.params.auth_key, req.params.role);
   var valid_user = await new Promise((resolve, reject) => {
     UserModel.findOne(
       { _id: req.params.user_id, auth_key: req.params.auth_key },
@@ -226,9 +226,9 @@ router.post("/addSolution", multipleUpload, async (req, res) => {
         solution.sub_category.en = solution_details.en;
         solution.sub_category.fr = solution_details.fr;
         solution.sub_category_price_dollar =
-        solution_details.sub_category_price_dollar;
+          solution_details.sub_category_price_dollar;
         solution.sub_category_price_euro =
-        solution_details.sub_category_price_euro;
+          solution_details.sub_category_price_euro;
         solution.sub_category_price_fr = solution_details.sub_category_price_fr;
         solution.pickup_street_address = solution_details.pickup_street_address;
         solution.pickup_city = solution_details.pickup_city;
@@ -239,9 +239,9 @@ router.post("/addSolution", multipleUpload, async (req, res) => {
         solution.pickup_location.lng = solution_details.pickup_lng;
         solution.pickup_postal_address = solution_details.pickup_postal_address;
         solution.delivery_street_address =
-        solution_details.delivery_street_address;
+          solution_details.delivery_street_address;
         solution.delivery_postal_address =
-        solution_details.delivery_postal_address;
+          solution_details.delivery_postal_address;
         solution.delivery_city = solution_details.delivery_city;
         solution.delivery_region = solution_details.delivery_region;
         solution.delivery_date = solution_details.delivery_date;
@@ -254,16 +254,13 @@ router.post("/addSolution", multipleUpload, async (req, res) => {
         solution.images = fileUploadResponse.locations;
         console.log(solution);
         const saved_solution = await new Promise((resolve, reject) => {
-          SolutionModel.create(
-            solution,
-            (err, new_solution) => {
-              if (!err) {
-                resolve(new_solution);
-              } else {
-                reject(err);
-              }
+          SolutionModel.create(solution, (err, new_solution) => {
+            if (!err) {
+              resolve(new_solution);
+            } else {
+              reject(err);
             }
-          );
+          });
         });
         if (saved_solution) {
           console.log(saved_solution);
@@ -332,34 +329,35 @@ router.put("/solutionAccepted", async (req, res) => {
     if (updated_solution) {
       console.log("Valid", valid_user);
       const userAccepted = await new Promise((resolve, reject) => {
-        UserModel.findOne({ _id: solution.accepted_by }, (err, user) => {
-          if (!err) {
-            console.log(
-              "userAccept",
-              user.firstName,
-              "+++",
-              user.mobile_no,
-              "+++",
-              valid_user.firstName,
-              "++++",
-              valid_user.mobile_no
-            );
-            client.messages
-              .create({
-                body: `Pickant App: Your offer is accepted by ${user.firstName} You can contact your supplier through email:${user.email} or through mobile number : ${user.mobile_no} `,
-                from: "(717) 415-5703",
-                to: valid_user.mobile_no
-              })
-              .then(message => {
-                resolve(message);
-              })
-              .catch(error => {
-                reject(error);
-              });
-          } else {
-            reject(error);
+        var new_price = solution.old_balance + solution.price;
+        UserModel.findOneAndUpdate(
+          { _id: solution.accepted_by },
+          {
+            $set: {
+              wallet: new_price
+            }
+          },
+          { new: true },
+          (err, user) => {
+            if (!err) {
+              console.log(user);
+              client.messages
+                .create({
+                  body: `Pickant App: Your offer is accepted by ${user.firstName} You can contact your supplier through email:${user.email} or through mobile number : ${user.mobile_no} `,
+                  from: "(717) 415-5703",
+                  to: valid_user.mobile_no
+                })
+                .then(message => {
+                  resolve(message);
+                })
+                .catch(error => {
+                  reject(error);
+                });
+            } else {
+              reject(error);
+            }
           }
-        });
+        );
       });
       res.status(200).send({
         status: true,
