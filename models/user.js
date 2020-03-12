@@ -18,6 +18,12 @@ var UserSchema = new Schema({
   auth_key: { type: String },
   admin:{type: Boolean, required:false},
   wallet:{type: Schema.Types.Decimal128, required: true, default:15.00},
+  subscription:{
+    subscription_flag: {type: Schema.Types.Boolean, default:false},
+    subscription_type: {type: Schema.Types.String},
+    subscription_start_date: {type: Schema.Types.Date},
+    subscription_end_date: {type: Schema.Types.Date}
+  }
 });
 
 module.exports = mongoose.model("Users", UserSchema);

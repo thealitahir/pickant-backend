@@ -3,6 +3,7 @@ var router = express.Router();
 const request = require("request");
 var PaymentModel = require("../models/payment");
 var UserModel = require("../models/user");
+const CFA = 655.06;
 
 require("dotenv").config();
 const paypal = require("paypal-rest-sdk");
@@ -152,15 +153,19 @@ router.get("/cancel", (req, res) => res.send("Cancelled"));
 
 router.post("/currencyconverter", (req, res) => {
   console.log("currency converter", req.body);
-  var to_rate, from_rate;
+  var to_rate, from_rate, euro, converted_amount;
   const url = `http://data.fixer.io/api/latest?access_key=${process.env.FIXER_API_KEY}`;
   console.log(url);
   request.get(url, (error, response, body) => {
     var rates = JSON.parse(response.body);
     rates = rates.rates;
+    rates["CFA"] = CFA;
     to_rate = rates[req.body.to];
     from_rate = rates[req.body.from];
-    res.send({ to_rate, from_rate });
+    euro = rates['EUR'];
+    console.log(to_rate,from_rate,euro);
+    converted_amount = (euro/from_rate)*to_rate;
+    res.send({ converted_amount });
   });
 });
 
