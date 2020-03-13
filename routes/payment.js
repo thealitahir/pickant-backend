@@ -19,19 +19,29 @@ router.post("/pay", (req, res) => {
   console.log("in payment");
   var payment_details = req.body;
   var item_list = payment_details.item_list;
+  console.log(payment_details);
   const create_payment_json = {
     intent: "sale",
     payer: {
       payment_method: "paypal"
     },
     redirect_urls: {
-      return_url: `http://localhost:3010/payment/success/?price=${payment_details.total_price}
-      &currency=${payment_details.currency}&user_id=${payment_details.user_id}`,
-      cancel_url: "http://localhost:3010/payment/cancel"
+      return_url: payment_details.return_url,
+      cancel_url: payment_details.cancel_url
     },
     transactions: [
       {
-        item_list,
+        item_list: {
+          items: [
+            {
+              name: payment_details.name,
+              sku: payment_details.sku,
+              price: payment_details.total_price,
+              currency: payment_details.currency,
+              quantity: payment_details.quantity
+            }
+          ]
+        },
         amount: {
           currency: payment_details.currency,
           total: payment_details.total_price
@@ -40,21 +50,24 @@ router.post("/pay", (req, res) => {
       }
     ]
   };
-
+  console.log(create_payment_json);
   paypal.payment.create(create_payment_json, function(error, payment) {
+    console.log(payment);
+    console.log(error);
     if (error) {
       throw error;
     } else {
+      console.log(payment.links);
       for (let i = 0; i < payment.links.length; i++) {
         if (payment.links[i].rel === "approval_url") {
-          res.redirect(payment.links[i].href);
+          res.send({ url: payment.links[i].href });
         }
       }
     }
   });
 });
 
-router.get("/success", async (req, res) => {
+router.post("/success", async (req, res) => {
   var payment_data = req.body;
   /* const payerId = req.query.PayerID;
   const paymentId = req.query.paymentId;
@@ -162,9 +175,9 @@ router.post("/currencyconverter", (req, res) => {
     rates["CFA"] = CFA;
     to_rate = rates[req.body.to];
     from_rate = rates[req.body.from];
-    euro = rates['EUR'];
-    console.log(to_rate,from_rate,euro);
-    converted_amount = (euro/from_rate)*to_rate;
+    euro = rates["EUR"];
+    console.log(to_rate, from_rate, euro);
+    converted_amount = (euro / from_rate) * to_rate;
     res.send({ converted_amount });
   });
 });

@@ -29,8 +29,8 @@ var storage = multer.memoryStorage();
 var multipleUpload = multer({ storage: storage }).array("file");
 
 module.exports = async function(files, path, cb) {
-  console.log("in file upload");
-  if (file.length < 1) {
+  console.log("in file upload", files.length);
+  if (files.length < 1) {
     cb([]);
   } else {
     var data;
