@@ -214,6 +214,9 @@ router.post("/addSolution", multipleUpload, async (req, res) => {
   if (valid_user) {
     const fileUploadResponse = await new Promise((resolve, reject) => {
       uploadFile(files, "categories/", (err, data) => {
+        console.log("file upload response ");
+        console.log(">>>>>>>>>>>>",err);
+        console.log("<<<<<<<<<<<<",data);
         if (!err) {
           resolve(data);
         } else {
