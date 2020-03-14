@@ -3,6 +3,7 @@ var router = express.Router();
 const request = require("request");
 var PaymentModel = require("../models/payment");
 var UserModel = require("../models/user");
+var SolutionModel = require("../models/solutions");
 const CFA = 655.06;
 
 require("dotenv").config();
@@ -102,11 +103,12 @@ router.post("/success", async (req, res) => {
         // res.send(payment);
         const payment_saved = await new Promise((resolve, reject) => {
           var payment_details = new PaymentModel();
-          payment_details.user_id = req.query.user_id;
+          payment_details.user_id = payment_data.user_id;
           payment_details.payer_id = payerId;
           payment_details.payment_id = paymentId;
           payment_details.total_price = total_price;
           payment_details.currency = currency;
+          payment_details.payment_type = payment_data.payment_type;
 
           payment_details.save((err, saved_payment) => {
             if (!err) {
@@ -119,11 +121,12 @@ router.post("/success", async (req, res) => {
         if (payment_saved) {
           const updated_user = await new Promise((resolve, reject) => {
             var new_price = payment_data.balance + payment_data.total_price;
-            UserModel.findOneAndUpdate(
-              { _id: payment_details.user_id },
+            SolutionModel.findOneAndUpdate(
+              { _id: payment_data.solution_id },
               {
                 $set: {
-                  wallet: new_price
+                  status: "Accepted",
+                  accepted_by: ObjectID(payment_data.accpeted_by_id)
                 }
               },
               { new: true },

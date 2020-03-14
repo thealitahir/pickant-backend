@@ -4,6 +4,7 @@ var mongoose = require("mongoose"),
 var PaymentSchema = new Schema({
   payer_id: { type: String, required: true },
   payment_id: { type: String, required: true },
+  payment_type: { type: String, required: true },
   total_price: { type: String, required: true },
   currency: { type: String, required: true },
   user_id: { type: mongoose.Schema.ObjectId, ref: "Users" }
