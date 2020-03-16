@@ -4,6 +4,7 @@ const request = require("request");
 var PaymentModel = require("../models/payment");
 var UserModel = require("../models/user");
 var SolutionModel = require("../models/solutions");
+var ObjectID = require("objectid");
 const CFA = 655.06;
 
 require("dotenv").config();
@@ -69,7 +70,9 @@ router.post("/pay", (req, res) => {
 });
 
 router.post("/success", async (req, res) => {
+  console.log("in success");
   var payment_data = req.body;
+  console.log(payment_data);
   /* const payerId = req.query.PayerID;
   const paymentId = req.query.paymentId;
   const total_price = req.query.price;
@@ -86,7 +89,7 @@ router.post("/success", async (req, res) => {
       }
     ]
   };
-
+  console.log(execute_payment_json);
   paypal.payment.execute(
     payment_data.paymentId,
     execute_payment_json,
@@ -104,10 +107,10 @@ router.post("/success", async (req, res) => {
         const payment_saved = await new Promise((resolve, reject) => {
           var payment_details = new PaymentModel();
           payment_details.user_id = payment_data.user_id;
-          payment_details.payer_id = payerId;
-          payment_details.payment_id = paymentId;
-          payment_details.total_price = total_price;
-          payment_details.currency = currency;
+          payment_details.payer_id = payment_data.payerId;
+          payment_details.payment_id = payment_data.paymentId;
+          payment_details.total_price = payment_data.total_price;
+          payment_details.currency = payment_data.currency;
           payment_details.payment_type = payment_data.payment_type;
 
           payment_details.save((err, saved_payment) => {
@@ -119,8 +122,9 @@ router.post("/success", async (req, res) => {
           });
         });
         if (payment_saved) {
-          const updated_user = await new Promise((resolve, reject) => {
+          const updated_solution = await new Promise((resolve, reject) => {
             var new_price = payment_data.balance + payment_data.total_price;
+            console.log("updating solution");
             SolutionModel.findOneAndUpdate(
               { _id: payment_data.solution_id },
               {
@@ -129,27 +133,30 @@ router.post("/success", async (req, res) => {
                   accepted_by: ObjectID(payment_data.accpeted_by_id)
                 }
               },
-              { new: true },
-              (err, user) => {
+              { new: true }
+            )
+              .populate("user")
+              .exec((err, user) => {
                 if (!err) {
                   resolve(user);
                 } else {
                   reject(err);
                 }
-              }
-            );
+              });
           })
-            .then(updated_user => {
+            .then(updated_solution => {
+              console.log(updated_solution);
               res.status(200).send({
                 status: true,
-                message: "user wallet updated successfully",
-                data: updated_user
+                message: "Solution updated successfully",
+                data: updated_solution
               });
             })
             .catch(err => {
+              console.log(err);
               res.status(401).send({
                 status: false,
-                message: "Unable to update user wallet",
+                message: "Unable to update Solution",
                 data: err
               });
             });
