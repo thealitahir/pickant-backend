@@ -5,6 +5,8 @@ const User = require("../models/user");
 const path = require("path");
 const aws = require("aws-sdk");
 const multer = require("multer");
+var UserModel = require("../models/user");
+
 const accessKeyId = process.env.AWS_ACCESS_KEY;
 const secretAccessKey = process.env.AWS_SECRET_KEY;
 const region = process.env.REGION;
@@ -23,7 +25,7 @@ router.get("/getAllCategories/:user_id", async (req, res) => {
       }
     });
   });
-  if (valid_user.admin) {
+  if (valid_user[0].admin) {
     Category.find({}, (error, categories) => {
       if (!error) {
         res.status(200).send({
