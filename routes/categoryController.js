@@ -5,6 +5,8 @@ const User = require("../models/user");
 const path = require("path");
 const aws = require("aws-sdk");
 const multer = require("multer");
+var UserModel = require("../models/user");
+
 const accessKeyId = process.env.AWS_ACCESS_KEY;
 const secretAccessKey = process.env.AWS_SECRET_KEY;
 const region = process.env.REGION;
@@ -23,7 +25,7 @@ router.get("/getAllCategories/:user_id", async (req, res) => {
       }
     });
   });
-  if (valid_user.admin) {
+  if (valid_user[0].admin) {
     Category.find({}, (error, categories) => {
       if (!error) {
         res.status(200).send({
@@ -151,120 +153,6 @@ router.post("/addCategory", multipleUpload, async (req, res) => {
           data: {}
         });
       });
-  } else {
-    res.status(403).send({
-      status: false,
-      message: "Access Denied",
-      data: {}
-    });
-  }
-});
-
-router.put("/updateCategory", multipleUpload, async (req, res) => {
-  var category = JSON.parse(req.body.update_data);
-  const files = req.files;
-  var valid_user = await new Promise((resolve, reject) => {
-    UserModel.find(
-      { _id: req.body.user_id, auth_key: req.body.auth_key },
-      (err, user) => {
-        if (!err) {
-          resolve(user);
-        } else {
-          reject(err);
-        }
-      }
-    );
-  });
-  if (valid_user && valid_user.admin) {
-    const fileUploadResponse = await new Promise((resolve, reject) => {
-      uploadFile(files, "users/", (err, data) => {
-        if (!err) {
-          resolve(data);
-        } else {
-          reject(err);
-        }
-      });
-    })
-      .then(async fileUploadResponse => {
-        category.image = fileUploadResponse.locations[0];
-        console.log(category);
-        const updated_category = await new Promise((resolve, reject) => {
-          Category.findOneAndUpdate(
-            { _id: req.body.category_id },
-            category,
-            { new: true },
-            (err, data) => {
-              if (!err) {
-                resolve(data);
-              } else {
-                reject(err);
-              }
-            }
-          );
-        });
-        if (updated_category) {
-          res.status(200).send({
-            status: true,
-            message: "Category updated successfuly",
-            data: updated_category
-          });
-        } else {
-          res.status(401).send({
-            status: false,
-            message: "Unable to update category",
-            data: {}
-          });
-        }
-      })
-      .catch(err => {
-        res.status(422).send({
-          status: false,
-          message: err.errors[0],
-          data: {}
-        });
-      });
-  } else {
-    res.status(403).send({
-      status: false,
-      message: "Access Denied",
-      data: {}
-    });
-  }
-});
-
-router.delete("/category", async (req, res) => {
-  console.log("in delete category");
-  var valid_user = await new Promise((resolve, reject) => {
-    UserModel.find(
-      { _id: req.body.user_id, auth_key: req.body.auth_key },
-      (err, user) => {
-        if (!err) {
-          resolve(user);
-        } else {
-          reject(err);
-        }
-      }
-    );
-  });
-  if (valid_user && valid_user.admin) {
-    Category.findOneAndRemove(
-      { _id: req.body.category_id },
-      (err, category) => {
-        if (!err) {
-          res.status(200).send({
-            status: true,
-            message: "Category deleted",
-            data: category
-          });
-        } else {
-          res.status(401).send({
-            status: false,
-            message: "Unable to delete category",
-            data: err
-          });
-        }
-      }
-    );
   } else {
     res.status(403).send({
       status: false,
