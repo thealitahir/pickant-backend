@@ -52,6 +52,67 @@ router.post("/pay", (req, res) => {
       }
     ]
   };
+  /*  const create_payment_json = {
+    intent: "sale",
+    payer: {
+      payment_method: "paypal"
+    },
+    redirect_urls: {
+      return_url: payment_details.return_url,
+      cancel_url: payment_details.cancel_url
+    },
+    transactions: [
+      {
+        item_list: {
+          items: [
+            {
+              name: payment_details.name,
+              sku: payment_details.sku,
+              price: payment_details.total_price,
+              currency: payment_details.currency,
+              quantity: payment_details.quantity
+            }
+          ]
+        },
+        amount: {
+          currency: payment_details.currency,
+          total: payment_details.total_price
+        },
+        description: payment_details.description
+      }
+    ]
+  }; */
+  /* const create_payment_json = {
+    intent: "sale",
+    payer: {
+      payment_method: "paypal"
+    },
+    transactions: [
+      {
+        amount: {
+          currency: payment_details.currency,
+          total: payment_details.total_price
+        },
+        item_list: {
+          items: [
+            {
+              name: payment_details.name,
+              sku: payment_details.sku,
+              price: payment_details.total_price,
+              currency: payment_details.currency,
+              quantity: payment_details.quantity
+            }
+          ],
+          redirect_urls: {
+            return_url: payment_details.return_url,
+            cancel_url: payment_details.cancel_url
+          },
+        },
+        description: payment_details.description
+      }
+    ]
+  }; */
+  console.log(">>>>>>>>>>>>>>>>>>>>>>");
   console.log(create_payment_json);
   paypal.payment.create(create_payment_json, function(error, payment) {
     console.log(payment);
@@ -190,6 +251,67 @@ router.post("/currencyconverter", (req, res) => {
     converted_amount = (euro / from_rate) * to_rate;
     res.send({ converted_amount });
   });
+});
+
+router.post("/updateSubscription", async (req, res) => {
+  console.log("updateSubscription", req.body);
+  var current_date = new Date();
+  var year = current_date.getFullYear();
+  var month = current_date.getMonth();
+  var day = current_date.getDate();
+  var end_date = new Date(year + 1, month, day);
+  const user = await new Promise((resolve, reject) => {
+    UserModel.findOneAndUpdate(
+      { _id: req.body.user_id },
+      {
+        $set: {
+          "subscription.subscription_flag": true,
+          "subscription.subscription_type": "yearly payment",
+          "subscription.subscription_start_date": current_date,
+          "subscription.subscription_end_date": end_date
+        }
+      },
+      { new: true },
+      (err, updated_user) => {
+        if (!err) {
+          resolve(updated_user);
+        } else {
+          reject(err);
+        }
+      }
+    );
+  });
+  if (updated_user) {
+    const payment_saved = await new Promise((resolve, reject) => {
+      var payment_details = new PaymentModel();
+      payment_details.user_id = req.body.user_id;
+      payment_details.payer_id = req.body.subscription_id;
+      payment_details.total_price = req.body.total_price;
+      payment_details.currency = "USD";
+      payment_details.payment_type = "yearly subscription";
+
+      payment_details.save((err, saved_payment) => {
+        if (!err) {
+          resolve(saved_payment);
+        } else {
+          reject(err);
+        }
+      });
+    });
+    if (payment_saved) {
+      res.status(200).send({
+        status: true,
+        message: "User subscrbed successfully",
+        data: updated_user
+      });
+    } else {
+      res.status(401).send({
+        status: false,
+        message: "Unable to add subscription",
+        data: err
+      });
+    }
+  }
 });
 
 module.exports = router;

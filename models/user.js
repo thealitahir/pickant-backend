@@ -5,7 +5,7 @@ var UserSchema = new Schema({
   firstName: { type: String, required: true },
   lastName: { type: String },
   identity_flag:{type:Boolean, required: false},
-  verified:{type:Boolean,required:true, default:false},
+  verified:{type:Boolean,required:true, default:false}, //identity verification
   verified_by:{type:Schema.Types.ObjectId},
   password: { type: String, required: true },
   email: { type: String, required: true },
