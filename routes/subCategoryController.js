@@ -2,7 +2,7 @@ var express = require("express");
 var router = express.Router();
 const Category = require("../models/category");
 const SubCategory = require("../models/subCategory");
-const User = require("../models/user");
+const UserModel = require("../models/user");
 const multer = require("multer");
 var uploadFile = require("./fileUpload");
 
@@ -11,7 +11,7 @@ var multipleUpload = multer({ storage: storage }).array("file");
 
 router.get("/getAllSubCategories/:user_id", async (req, res) => {
   var valid_user = await new Promise((resolve, reject) => {
-    UserModel.find({ _id: req.params.user_id }, (err, user) => {
+    UserModel.findOne({ _id: req.params.user_id }, (err, user) => {
       if (!err) {
         resolve(user);
       } else {
@@ -46,7 +46,7 @@ router.get("/getAllSubCategories/:user_id", async (req, res) => {
 
 router.get("/getCategory/:subcategory_id/:user_id", async (req, res) => {
   var valid_user = await new Promise((resolve, reject) => {
-    UserModel.find({ _id: req.params.user_id }, (err, user) => {
+    UserModel.findOne({ _id: req.params.user_id }, (err, user) => {
       if (!err) {
         resolve(user);
       } else {
@@ -85,10 +85,9 @@ router.get("/getCategory/:subcategory_id/:user_id", async (req, res) => {
 router.post("/addSubCategory", multipleUpload, async (req, res) => {
   console.log("in add subCategory");
   const files = req.files;
-  var new_subcategory = new SubCategory();
-  new_subcategory = JSON.parse(req.body.new_category);
+  var new_subcategory = JSON.parse(req.body.new_category);
   var valid_user = await new Promise((resolve, reject) => {
-    UserModel.find(
+    UserModel.findOne(
       { _id: req.body.user_id, auth_key: req.body.auth_key },
       (err, user) => {
         if (!err) {
@@ -101,7 +100,7 @@ router.post("/addSubCategory", multipleUpload, async (req, res) => {
   });
   if (valid_user && valid_user.admin) {
     const fileUploadResponse = await new Promise((resolve, reject) => {
-      uploadFile(files, "categories/", (err, data) => {
+      uploadFile(files, "subCategories/", (err, data) => {
         if (!err) {
           resolve(data);
         } else {
@@ -110,15 +109,18 @@ router.post("/addSubCategory", multipleUpload, async (req, res) => {
       });
     })
       .then(async fileUploadResponse => {
-        /* var subCategory = new SubCategory();
-        subCategory.name = new_subCategory.name;
+        var subCategory = new SubCategory();
+        subCategory.name_en = new_subCategory.name_en;
         subCategory.name_fr = new_subCategory.name_fr;
-        subCategory.status = new_subCategory.status; */
-        new_subcategory.created_at = new Date.now();
-        new_subcategory.image = fileUploadResponse.locations[0];
-        new_subcategory.updated_at = new Date.now();
+        subCategory.status = true;
+        subCategory.price_eur = new_subcategory.price_eur;
+        subCategory.price_cfa = new_subcategory.price_cfa;
+        subCategory.desc = new_subcategory.desc;
+        subCategory.created_at = new Date();
+        subCategory.image = fileUploadResponse.locations[0];
+        subCategory.updated_at = new Date();
         const saved_category = await new Promise((resolve, reject) => {
-          new_subcategory.save((err, added_subcategory) => {
+          SubCategory.save(subCategory,(err, added_subcategory) => {
             if (!err) {
               resolve(added_subcategory);
             } else {
@@ -130,7 +132,7 @@ router.post("/addSubCategory", multipleUpload, async (req, res) => {
           res.status(200).send({
             status: true,
             message: "subcategory saved",
-            data: added_subcategory
+            data: saved_category
           });
         } else {
           res.status(400).send({
@@ -160,7 +162,7 @@ router.put("/updateSubCategory", multipleUpload, async (req, res) => {
   var sub_category = JSON.parse(req.body.update_data);
   const files = req.files;
   var valid_user = await new Promise((resolve, reject) => {
-    UserModel.find(
+    UserModel.findOne(
       { _id: req.body.user_id, auth_key: req.body.auth_key },
       (err, user) => {
         if (!err) {
@@ -231,7 +233,7 @@ router.put("/updateSubCategory", multipleUpload, async (req, res) => {
 router.delete("/subCategory", async (req, res) => {
   console.log("in delete subCategory");
   var valid_user = await new Promise((resolve, reject) => {
-    UserModel.find(
+    UserModel.findOne(
       { _id: req.body.user_id, auth_key: req.body.auth_key },
       (err, user) => {
         if (!err) {
