@@ -272,16 +272,16 @@ router.post("/updateSubscription", async (req, res) => {
         }
       },
       { new: true },
-      (err, updated_user) => {
+      (err, user) => {
         if (!err) {
-          resolve(updated_user);
+          resolve(user);
         } else {
           reject(err);
         }
       }
     );
   });
-  if (updated_user) {
+  if (user) {
     const payment_saved = await new Promise((resolve, reject) => {
       var payment_details = new PaymentModel();
       payment_details.user_id = req.body.user_id;
@@ -302,7 +302,7 @@ router.post("/updateSubscription", async (req, res) => {
       res.status(200).send({
         status: true,
         message: "User subscrbed successfully",
-        data: updated_user
+        data: user
       });
     } else {
       res.status(401).send({
