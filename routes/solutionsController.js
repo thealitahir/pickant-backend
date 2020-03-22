@@ -215,8 +215,8 @@ router.post("/addSolution", multipleUpload, async (req, res) => {
     const fileUploadResponse = await new Promise((resolve, reject) => {
       uploadFile(files, "categories/", (err, data) => {
         console.log("file upload response ");
-        console.log(">>>>>>>>>>>>",err);
-        console.log("<<<<<<<<<<<<",data);
+        console.log(">>>>>>>>>>>>", err);
+        console.log("<<<<<<<<<<<<", data);
         if (!err) {
           resolve(data);
         } else {
@@ -319,15 +319,16 @@ router.put("/solutionAccepted", async (req, res) => {
             accepted_by: ObjectID(solution.accepted_by)
           }
         },
-        { new: true },
-        (err, data) => {
+        { new: true }
+      )
+        .populate("user")
+        .exec((err, data) => {
           if (!err) {
             resolve(data);
           } else {
             reject(err);
           }
-        }
-      );
+        });
     });
     if (updated_solution) {
       console.log("Valid", valid_user);
