@@ -9,10 +9,10 @@ const client = require("twilio")(
 );
 const multer = require("multer");
 var uploadFile = require("./fileUpload");
-
+​
 var storage = multer.memoryStorage();
 var multipleUpload = multer({ storage: storage }).array("file");
-
+​
 router.get("/getAllSolutions/:user_id/:auth_key/:role", async (req, res) => {
   console.log("in get all solutions");
   console.log(req.params.user_id, req.params.auth_key, req.params.role);
@@ -54,7 +54,7 @@ router.get("/getAllSolutions/:user_id/:auth_key/:role", async (req, res) => {
     });
   }
 });
-
+​
 router.get(
   "/getSolutionDetails/:user_id/:auth_key/:solution_id/:role",
   async (req, res) => {
@@ -99,7 +99,7 @@ router.get(
     }
   }
 );
-
+​
 router.get("/getUserSolutions/:user_id/:auth_key", async (req, res) => {
   console.log("in get solution details");
   var valid_user = await new Promise((resolve, reject) => {
@@ -142,7 +142,7 @@ router.get("/getUserSolutions/:user_id/:auth_key", async (req, res) => {
     });
   }
 });
-
+​
 router.get(
   "/getSolutionUsers/:solution_id/:user_id/:auth_key",
   async (req, res) => {
@@ -190,7 +190,7 @@ router.get(
     }
   }
 );
-
+​
 router.post("/addSolution", multipleUpload, async (req, res) => {
   console.log("in add solution");
   const files = req.files;
@@ -210,13 +210,13 @@ router.post("/addSolution", multipleUpload, async (req, res) => {
       }
     );
   });
-
+​
   if (valid_user) {
     const fileUploadResponse = await new Promise((resolve, reject) => {
       uploadFile(files, "categories/", (err, data) => {
         console.log("file upload response ");
-        console.log(">>>>>>>>>>>>",err);
-        console.log("<<<<<<<<<<<<",data);
+        console.log(">>>>>>>>>>>>", err);
+        console.log("<<<<<<<<<<<<", data);
         if (!err) {
           resolve(data);
         } else {
@@ -295,7 +295,7 @@ router.post("/addSolution", multipleUpload, async (req, res) => {
       .send({ status: false, message: "User authentication failed", data: {} });
   }
 });
-
+​
 router.put("/solutionAccepted", async (req, res) => {
   console.log("in solutionAccepted", req.body);
   const solution = req.body;
@@ -319,15 +319,16 @@ router.put("/solutionAccepted", async (req, res) => {
             accepted_by: ObjectID(solution.accepted_by)
           }
         },
-        { new: true },
-        (err, data) => {
+        { new: true }
+      )
+        .populate("user")
+        .exec((err, data) => {
           if (!err) {
             resolve(data);
           } else {
             reject(err);
           }
-        }
-      );
+        });
     });
     if (updated_solution) {
       console.log("Valid", valid_user);
@@ -382,7 +383,7 @@ router.put("/solutionAccepted", async (req, res) => {
     });
   }
 });
-
+​
 router.post("/test", (req, res) => {
   console.log("in test");
   UserModel.findOne({ _id: "5e4a250e594e090510f65cb9" }, (err, data) => {
@@ -390,5 +391,5 @@ router.post("/test", (req, res) => {
   });
   //res.send("Hello from test");
 });
-
+​
 module.exports = router;
