@@ -190,7 +190,9 @@ router.put("/updateSubCategory", multipleUpload, async (req, res) => {
       });
     })
       .then(async fileUploadResponse => {
-        sub_category.image = fileUploadResponse.locations[0];
+        if(fileUploadResponse.locations){
+          sub_category.image = fileUploadResponse.locations[0];
+        }
         console.log(sub_category);
         const updated_sub_category = await new Promise((resolve, reject) => {
           SubCategory.findOneAndUpdate(
@@ -221,9 +223,10 @@ router.put("/updateSubCategory", multipleUpload, async (req, res) => {
         }
       })
       .catch(err => {
+        console.log(err);
         res.status(422).send({
           status: false,
-          message: err.errors[0],
+          message: err.errors,
           data: {}
         });
       });
