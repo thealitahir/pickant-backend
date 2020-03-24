@@ -85,7 +85,6 @@ router.get("/getCategory/:subcategory_id/:user_id", async (req, res) => {
 router.post("/addSubCategory", multipleUpload, async (req, res) => {
   console.log("in add subCategory");
   const files = req.files;
-  var new_subcategory = JSON.parse(req.body.new_category);
   var valid_user = await new Promise((resolve, reject) => {
     UserModel.findOne(
       { _id: req.body.user_id, auth_key: req.body.auth_key },
@@ -109,18 +108,24 @@ router.post("/addSubCategory", multipleUpload, async (req, res) => {
       });
     })
       .then(async fileUploadResponse => {
+        console.log("file uploaded");
+        console.log(fileUploadResponse.locations[0]);
+        var new_subcategory = JSON.parse(req.body.new_category);
+        console.log(new_subcategory);
         var subCategory = new SubCategory();
-        subCategory.name_en = new_subCategory.name_en;
-        subCategory.name_fr = new_subCategory.name_fr;
+        subCategory.name_en = new_subcategory.name_en;
+        subCategory.name_fr = new_subcategory.name_fr;
         subCategory.status = true;
         subCategory.price_eur = new_subcategory.price_eur;
         subCategory.price_cfa = new_subcategory.price_cfa;
+        subCategory.price = new_subcategory.price;
         subCategory.desc = new_subcategory.desc;
         subCategory.created_at = new Date();
         subCategory.image = fileUploadResponse.locations[0];
         subCategory.updated_at = new Date();
+        console.log(subCategory);
         const saved_category = await new Promise((resolve, reject) => {
-          SubCategory.save(subCategory,(err, added_subcategory) => {
+          SubCategory.create(subCategory, (err, added_subcategory) => {
             if (!err) {
               resolve(added_subcategory);
             } else {
@@ -128,7 +133,7 @@ router.post("/addSubCategory", multipleUpload, async (req, res) => {
             }
           });
         });
-        if (saved_category) { 
+        if (saved_category) {
           res.status(200).send({
             status: true,
             message: "subcategory saved",
@@ -143,6 +148,7 @@ router.post("/addSubCategory", multipleUpload, async (req, res) => {
         }
       })
       .catch(err => {
+        console.log(err);
         res.status(422).send({
           status: false,
           message: err.errors,
