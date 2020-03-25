@@ -239,11 +239,11 @@ router.put("/updateSubCategory", multipleUpload, async (req, res) => {
   }
 });
 
-router.delete("/subCategory", async (req, res) => {
-  console.log("in delete subCategory");
+router.delete("/subCategory/:sub_category_id/:user_id/:auth_key", async (req, res) => {
+  console.log("in delete sub category");
   var valid_user = await new Promise((resolve, reject) => {
     UserModel.findOne(
-      { _id: req.body.user_id, auth_key: req.body.auth_key },
+      { _id: req.params.user_id, auth_key: req.params.auth_key },
       (err, user) => {
         if (!err) {
           resolve(user);
@@ -255,7 +255,7 @@ router.delete("/subCategory", async (req, res) => {
   });
   if (valid_user && valid_user.admin) {
     SubCategory.findOneAndRemove(
-      { _id: req.body.subCategory_id },
+      { _id: req.params.sub_category_id },
       (err, subCategory) => {
         if (!err) {
           res.status(200).send({

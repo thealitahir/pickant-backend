@@ -239,11 +239,11 @@ router.put("/updateCategory", multipleUpload, async (req, res) => {
   }
 });
 
-router.delete("/category", async (req, res) => {
+router.delete("/category/:category_id/:user_id/:auth_key", async (req, res) => {
   console.log("in delete category");
   var valid_user = await new Promise((resolve, reject) => {
     UserModel.findOne(
-      { _id: req.body.user_id, auth_key: req.body.auth_key },
+      { _id: req.params.user_id, auth_key: req.params.auth_key },
       (err, user) => {
         if (!err) {
           resolve(user);
@@ -255,7 +255,7 @@ router.delete("/category", async (req, res) => {
   });
   if (valid_user && valid_user.admin) {
     Category.findOneAndRemove(
-      { _id: req.body.category_id },
+      { _id: req.params.category_id },
       (err, category) => {
         if (!err) {
           res.status(200).send({
