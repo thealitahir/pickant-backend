@@ -44,7 +44,7 @@ router.get("/getAllSubCategories/:user_id", async (req, res) => {
   }
 });
 
-router.get("/getCategory/:subcategory_id/:user_id", async (req, res) => {
+router.get("/getSubCategory/:subcategory_id/:user_id", async (req, res) => {
   var valid_user = await new Promise((resolve, reject) => {
     UserModel.findOne({ _id: req.params.user_id }, (err, user) => {
       if (!err) {
@@ -57,6 +57,44 @@ router.get("/getCategory/:subcategory_id/:user_id", async (req, res) => {
   if (valid_user.admin) {
     SubCategory.findOne(
       { _id: req.params.subcategory_id },
+      (error, subCategory) => {
+        if (!error) {
+          res.status(200).send({
+            status: true,
+            message: "subCategory found",
+            data: subCategory
+          });
+        } else {
+          res.status(400).send({
+            status: true,
+            message: "Unable to get subCategory",
+            data: {}
+          });
+        }
+      }
+    );
+  } else {
+    res.status(403).send({
+      status: false,
+      message: "Access Denied",
+      data: {}
+    });
+  }
+});
+
+router.get("/getSubCategoryByCategory/:category/:user_id", async (req, res) => {
+  var valid_user = await new Promise((resolve, reject) => {
+    UserModel.findOne({ _id: req.params.user_id }, (err, user) => {
+      if (!err) {
+        resolve(user);
+      } else {
+        reject(err);
+      }
+    });
+  });
+  if (valid_user.admin) {
+    SubCategory.findOne(
+      { _id: req.params.category },
       (error, subCategory) => {
         if (!error) {
           res.status(200).send({

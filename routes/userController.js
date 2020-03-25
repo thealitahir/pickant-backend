@@ -321,54 +321,54 @@ router.put("/updatePassword", async (req, res) => {
 
 router.put("/verifyUser", async (req, res) => {
   // const user_data = await new Promise((resolve, reject) => {
-    // UserModel.findOne(
-    //   { _id: req.body.id },
-    //   // { _id: req.body.id, auth_key: req.body.auth_key },
-    //   (err, user) => {
-    //     if (!err) {
-    //       resolve(user);
-    //     } else {
-    //       reject(err);
-    //     }
-    //   }
-    // );
+  // UserModel.findOne(
+  //   { _id: req.body.id },
+  //   // { _id: req.body.id, auth_key: req.body.auth_key },
+  //   (err, user) => {
+  //     if (!err) {
+  //       resolve(user);
+  //     } else {
+  //       reject(err);
+  //     }
+  //   }
+  // );
   // });
   // if (user_data && user_data.admin) {
   // if (user_data) {
-    const updated_user = await new Promise((resolve, reject) => {
-      UserModel.findOneAndUpdate(
-        { _id: req.body.user_id },
-        {
-          $set: {
-            verified: req.body.verifyFlag,
-            verified_by: req.body.user_id
-          }
-        },
-        { new: true },
-        (error, user) => {
-          if (!error) {
-            console.log("user updated", user);
-            resolve(user);
-          } else {
-            console.log("error occured", error);
-            reject(error);
-          }
+  const updated_user = await new Promise((resolve, reject) => {
+    UserModel.findOneAndUpdate(
+      { _id: req.body.user_id },
+      {
+        $set: {
+          verified: req.body.verifyFlag,
+          verified_by: req.body.user_id
         }
-      );
+      },
+      { new: true },
+      (error, user) => {
+        if (!error) {
+          console.log("user updated", user);
+          resolve(user);
+        } else {
+          console.log("error occured", error);
+          reject(error);
+        }
+      }
+    );
+  });
+  if (updated_user) {
+    res.status(200).send({
+      status: true,
+      message: "User verified",
+      data: updated_user
     });
-    if (updated_user) {
-      res.status(200).send({
-        status: true,
-        message: "User verified",
-        data: updated_user
-      });
-    } else {
-      res.status(401).send({
-        status: false,
-        message: "User verification failed",
-        data: {}
-      });
-    }
+  } else {
+    res.status(401).send({
+      status: false,
+      message: "User verification failed",
+      data: {}
+    });
+  }
   // } else {
   //   res.status(403).send({
   //     status: false,
@@ -453,6 +453,48 @@ router.put("/updateUser", multipleUpload, async (req, res) => {
         data: {}
       });
     });
+});
+
+router.post("/updateSubscription", async (req, res) => {
+  var current_date = new Date();
+  var year = current_date.getFullYear();
+  var month = current_date.getMonth();
+  var day = current_date.getDate();
+  var end_date = new Date(year, month + 3, day);
+  var valid_user = await new Promise((resolve, reject) => {
+    UserModel.findOneAndUpdate(
+      { _id: req.body.user_id, auth_key: req.body.auth_key },
+      {
+        $set: {
+          "subscription.subscription_flag": true,
+          "subscription.subscription_type": "90 days trail",
+          "subscription.subscription_start_date": current_date,
+          "subscription.subscription_end_date": end_date
+        }
+      },
+      { new: true },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
+      }
+    );
+  });
+  if (valid_user) {
+    res.status(200).send({
+      status: true,
+      message: "User updated successfuly",
+      data: valid_user
+    });
+  } else {
+    res.status(401).send({
+      status: false,
+      message: "Authentication failed",
+      data: {}
+    });
+  }
 });
 
 router.get("/getUser/:id/:user_id/:auth_key", async (req, res) => {

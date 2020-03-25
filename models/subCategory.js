@@ -12,7 +12,7 @@ var SubCategorySchema = new Schema({
   status: { type: String, required: true },
   created_at: { type: String, required: true },
   updated_at: { type: Schema.Types.Mixed },
-  category: { type: mongoose.Schema.ObjectId, ref: "Category" }
+  category: { type: String, required: true }
 });
 
 module.exports = mongoose.model("SubCategory", SubCategorySchema);
