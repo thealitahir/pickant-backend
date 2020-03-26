@@ -20,6 +20,7 @@ var UserSchema = new Schema({
   wallet:{type: Schema.Types.Decimal128, required: true, default:15.00},
   subscription:{
     subscription_flag: {type: Schema.Types.Boolean, default:false},
+    trail_complete:{type: Schema.Types.Boolean, default:false},
     subscription_type: {type: Schema.Types.String},
     subscription_start_date: {type: Schema.Types.Date},
     subscription_end_date: {type: Schema.Types.Date}

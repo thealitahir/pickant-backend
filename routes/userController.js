@@ -467,6 +467,7 @@ router.post("/updateSubscription", async (req, res) => {
       {
         $set: {
           "subscription.subscription_flag": req.body.status,
+          "subscription.trail_complete": req.body.trail_complete,
           "subscription.subscription_type": "90 days trail",
           "subscription.subscription_start_date": current_date,
           "subscription.subscription_end_date": end_date
