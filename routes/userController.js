@@ -28,6 +28,7 @@ router.post("/login", async (req, res) => {
   if (!creds.password) {
     creds.email = "x";
   }
+  creds.email = creds.email.toLowerCase();
   const user = await new Promise((resolve, reject) => {
     UserModel.findOne(
       { email: creds.email, password: creds.password },
@@ -54,7 +55,7 @@ router.post("/login", async (req, res) => {
     var key = generateRandomString();
     const updated_user = await new Promise((resolve, reject) => {
       UserModel.findOneAndUpdate(
-        { email: req.body.email },
+        { email: req.body.email.toLowerCase() },
         {
           $set: {
             auth_key: key
@@ -96,7 +97,7 @@ router.post("/register", multipleUpload, async (req, res) => {
   console.log(files);
   console.log(newUser);
   const unique_user = await new Promise((resolve, reject) => {
-    UserModel.findOne({ email: newUser.email }, (err, user) => {
+    UserModel.findOne({ email: newUser.email.toLowerCase() }, (err, user) => {
       if (!err) {
         resolve(user);
       } else {
@@ -142,6 +143,7 @@ router.post("/register", multipleUpload, async (req, res) => {
     newUser.identity_flag = req.body.identity_flag; */
     console.log("********************");
     console.log(newUser);
+    newUser.email = newUser.email.toLowerCase();
     //create new user
     const new_user = await new Promise((resolve, reject) => {
       UserModel.findOneAndUpdate(
