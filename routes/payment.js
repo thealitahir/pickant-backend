@@ -12,7 +12,7 @@ const paypal = require("paypal-rest-sdk");
 const convertCurrency = require("nodejs-currency-converter");
 
 paypal.configure({
-  mode: "sandbox", //sandbox or live
+  mode: "live", //sandbox or live
   client_id: process.env.PAYPAL_CLIENT_ID_PRODUCTION,
   client_secret: process.env.PAYPAL_CLIENT_SECRET_PRODUCTION
 });
