@@ -4,6 +4,7 @@ var mongoose = require("mongoose"),
 var SolutionSchema = new Schema({
   category: { type: String, required: true },
   sub_category: { en: Schema.Types.String, fr: Schema.Types.String },
+  display_price:{type: String},
   sub_category_price_dollar: { type: String, required: true },
   sub_category_price_euro: { type: String, required: true },
   sub_category_price_fr: { type: String, required: true },

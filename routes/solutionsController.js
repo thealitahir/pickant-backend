@@ -253,6 +253,7 @@ router.post("/addSolution", multipleUpload, async (req, res) => {
         solution.delivery_location.lat = solution_details.delivery_lat;
         solution.delivery_location.lng = solution_details.delivery_lng;
         solution.description = solution_details.description;
+        solution.display_price = solution_details.display_price;
         solution.user = ObjectID(solution_details.user);
         solution.user_role = solution_details.user_role;
         solution.images = fileUploadResponse.locations;
