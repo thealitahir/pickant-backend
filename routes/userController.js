@@ -501,6 +501,8 @@ router.post("/updateSubscription", async (req, res) => {
 });
 
 router.get("/getUser/:id/:user_id/:auth_key", async (req, res) => {
+  console.log("in get user");
+  console.log(req.params.id,req.params.auth_key);
   const user_data = await new Promise((resolve, reject) => {
     UserModel.findOne(
       { _id: req.params.id, auth_key: req.params.auth_key },
@@ -514,6 +516,7 @@ router.get("/getUser/:id/:user_id/:auth_key", async (req, res) => {
     );
   });
   if (user_data) {
+    console.log(user_data);
     UserModel.findOne({ _id: req.params.user_id }, function(err, user) {
       if (!err) {
         var end_user = {};
@@ -531,6 +534,7 @@ router.get("/getUser/:id/:user_id/:auth_key", async (req, res) => {
           data: end_user
         });
       } else {
+        console.log("error occured");
         res.status(401).send({
           status: false,
           message: {
@@ -540,6 +544,13 @@ router.get("/getUser/:id/:user_id/:auth_key", async (req, res) => {
           data: {}
         });
       }
+    });
+  }
+  else{
+    res.status(401).send({
+      status: false,
+      message: "User verification failed",
+      data: {}
     });
   }
 });
