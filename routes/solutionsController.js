@@ -28,6 +28,7 @@ router.get("/getAllSolutions/:user_id/:auth_key/:role", async (req, res) => {
       }
     );
   });
+  
   if (valid_user) {
     SolutionModel.find({ user_role: req.params.role, status: "Pending" })
       .populate("user")
