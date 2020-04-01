@@ -11,6 +11,10 @@ const stripe = require("stripe")("sk_test_4eC39HqLyjWDarjtT1zdp7dc");
 sgMail.setApiKey(
   "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"
 );
+/* const stripe = require("stripe")("sk_test_4eC39HqLyjWDarjtT1zdp7dc");
+stripe.charges.retrieve("ch_1GT4aH2eZvKYlo2C03o0cGY7", {
+  api_key: "sk_test_4eC39HqLyjWDarjtT1zdp7dc"
+}); */
 require("dotenv").config();
 const client = require("twilio")(
   process.env.TWILIO_ACCOUNTSID,
@@ -502,7 +506,7 @@ router.post("/updateSubscription", async (req, res) => {
 
 router.get("/getUser/:id/:user_id/:auth_key", async (req, res) => {
   console.log("in get user");
-  console.log(req.params.id,req.params.auth_key);
+  console.log(req.params.id, req.params.auth_key);
   const user_data = await new Promise((resolve, reject) => {
     UserModel.findOne(
       { _id: req.params.id, auth_key: req.params.auth_key },
@@ -545,8 +549,7 @@ router.get("/getUser/:id/:user_id/:auth_key", async (req, res) => {
         });
       }
     });
-  }
-  else{
+  } else {
     res.status(401).send({
       status: false,
       message: "User verification failed",
@@ -597,6 +600,43 @@ router.get("/getAllUsers", async (req, res) => {
   // }
 });
 
+router.delete("/deleteUser/:admin_id/:user_id/:auth_key", async (req, res) => {
+  const user_data = await new Promise((resolve, reject) => {
+    UserModel.findOne(
+      { _id: req.params.admin_id, auth_key: req.params.auth_key },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
+      }
+    );
+  });
+  if (user_data && user_data.admin) {
+    UserModel.findOneAndRemove({_id:req.params.user_id}, function(err, users) {
+      if (!err) {
+        res.status(200).send({
+          status: true,
+          message: "user deleted",
+          data: users
+        });
+      } else {
+        res.status(401).send({
+          status: false,
+          message: "unable to delete user",
+          data: {}
+        });
+      }
+    });
+  } else {
+    res.status(401).send({
+      status: false,
+      message: "Authentication failed",
+      data: {}
+    });
+  }
+});
 router.get("/test", (req, res) => {
   console.log("in test");
 
