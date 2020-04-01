@@ -229,6 +229,7 @@ router.post("/addSolution", multipleUpload, async (req, res) => {
         solution.category = solution_details.category;
         solution.sub_category.en = solution_details.en;
         solution.sub_category.fr = solution_details.fr;
+        solution.display_price=solution_details.display_price;
         solution.sub_category_price_dollar =
           solution_details.sub_category_price_dollar;
         solution.sub_category_price_euro =
