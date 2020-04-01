@@ -1,6 +1,7 @@
 var express = require("express");
 var router = express.Router();
 var UserModel = require("../models/user");
+var SolutionModel = require("../models/solutions");
 const nodemailer = require("nodemailer");
 var http = require("https");
 const sgMail = require("@sendgrid/mail");
@@ -614,21 +615,44 @@ router.delete("/deleteUser/:admin_id/:user_id/:auth_key", async (req, res) => {
     );
   });
   if (user_data && user_data.admin) {
-    UserModel.findOneAndRemove({_id:req.params.user_id}, function(err, users) {
-      if (!err) {
-        res.status(200).send({
-          status: true,
-          message: "user deleted",
-          data: users
-        });
-      } else {
-        res.status(401).send({
-          status: false,
-          message: "unable to delete user",
-          data: {}
-        });
-      }
+    const removed_user = await new Promise((resolve, reject) => {
+      UserModel.findOneAndRemove({ _id: req.params.user_id }, function(
+        err,
+        users
+      ) {
+        if (!err) {
+          resolve(users);
+        } else {
+          reject(err);
+        }
+      });
     });
+    if (removed_user) {
+      SolutionModel.deleteMany({ user: req.params.user_id }, function(
+        error,
+        solutions
+      ) {
+        if (!error) {
+          res.status(200).send({
+            status: true,
+            message: "user and solution deleted",
+            data: solutions
+          });
+        } else {
+          res.status(401).send({
+            status: false,
+            message: "unable to delete solution",
+            data: {}
+          });
+        }
+      });
+    } else {
+      res.status(401).send({
+        status: false,
+        message: "unable to delete user",
+        data: {}
+      });
+    }
   } else {
     res.status(401).send({
       status: false,
