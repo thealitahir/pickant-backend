@@ -13,23 +13,23 @@ var uploadFile = require("./fileUpload");
 var storage = multer.memoryStorage();
 var multipleUpload = multer({ storage: storage }).array("file");
 
-router.get("/getAllSolutions/:user_id/:auth_key/:role", async (req, res) => {
+router.get("/getAllSolutions/:role", async (req, res) => {
   console.log("in get all solutions");
-  console.log(req.params.user_id, req.params.auth_key, req.params.role);
-  var valid_user = await new Promise((resolve, reject) => {
-    UserModel.findOne(
-      { _id: req.params.user_id, auth_key: req.params.auth_key },
-      (err, user) => {
-        if (!err) {
-          resolve(user);
-        } else {
-          reject(err);
-        }
-      }
-    );
-  });
-
-  if (valid_user) {
+  console.log(req.params.role);
+  // var valid_user = await new Promise((resolve, reject) => {
+  //   UserModel.findOne(
+  //     { _id: req.params.user_id, auth_key: req.params.auth_key },
+  //     (err, user) => {
+  //       if (!err) {
+  //         resolve(user);
+  //       } else {
+  //         reject(err);
+  //       }
+  //     }
+  //   );
+  // });
+  
+  // if (valid_user) {
     SolutionModel.find({ user_role: req.params.role, status: "Pending" })
       .populate("user")
       .exec((err, data) => {
@@ -47,14 +47,16 @@ router.get("/getAllSolutions/:user_id/:auth_key/:role", async (req, res) => {
           });
         }
       });
-  } else {
-    res.status(401).send({
-      status: false,
-      message: "Authentication failed",
-      data: {},
-    });
   }
-});
+//    else {
+//     res.status(401).send({
+//       status: false,
+//       message: "Authentication failed",
+//       data: {}
+//     });
+//   }
+// }
+);
 
 router.get(
   "/getSolutionDetails/:user_id/:auth_key/:solution_id/:role",
