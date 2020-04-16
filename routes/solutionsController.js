@@ -28,7 +28,7 @@ router.get("/getAllSolutions/:user_id/:auth_key/:role", async (req, res) => {
       }
     );
   });
-  
+
   if (valid_user) {
     SolutionModel.find({ user_role: req.params.role, status: "Pending" })
       .populate("user")
@@ -37,13 +37,13 @@ router.get("/getAllSolutions/:user_id/:auth_key/:role", async (req, res) => {
           res.status(200).send({
             status: true,
             message: "solutions found",
-            data: data
+            data: data,
           });
         } else {
           res.status(400).send({
             status: false,
             message: "unable to find solutions",
-            data: {}
+            data: {},
           });
         }
       });
@@ -51,7 +51,7 @@ router.get("/getAllSolutions/:user_id/:auth_key/:role", async (req, res) => {
     res.status(401).send({
       status: false,
       message: "Authentication failed",
-      data: {}
+      data: {},
     });
   }
 });
@@ -73,7 +73,7 @@ router.get(
       console.log("user validated");
       SolutionModel.findOne({
         _id: req.params.solution_id,
-        user_role: req.params.role
+        user_role: req.params.role,
       })
         .populate("user")
         .exec((err, data) => {
@@ -81,13 +81,13 @@ router.get(
             res.status(200).send({
               status: true,
               message: "solutions found",
-              data: data
+              data: data,
             });
           } else {
             res.status(400).send({
               status: false,
               message: "unable to find solutions",
-              data: {}
+              data: {},
             });
           }
         });
@@ -95,7 +95,7 @@ router.get(
       res.status(401).send({
         status: false,
         message: "Authentication failed",
-        data: {}
+        data: {},
       });
     }
   }
@@ -117,7 +117,7 @@ router.get("/getUserSolutions/:user_id/:auth_key", async (req, res) => {
   });
   if (valid_user) {
     SolutionModel.find({
-      user: req.params.user_id
+      user: req.params.user_id,
     })
       .populate("user")
       .exec((err, data) => {
@@ -125,13 +125,13 @@ router.get("/getUserSolutions/:user_id/:auth_key", async (req, res) => {
           res.status(200).send({
             status: true,
             message: "solutions found",
-            data: data
+            data: data,
           });
         } else {
           res.status(400).send({
             status: false,
             message: "unable to find solutions",
-            data: {}
+            data: {},
           });
         }
       });
@@ -139,7 +139,7 @@ router.get("/getUserSolutions/:user_id/:auth_key", async (req, res) => {
     res.status(401).send({
       status: false,
       message: "Authentication failed",
-      data: {}
+      data: {},
     });
   }
 });
@@ -163,7 +163,7 @@ router.get(
     if (valid_user) {
       SolutionModel.findOne({
         _id: req.params.solution_id,
-        status: "Accepted"
+        status: "Accepted",
       })
         .populate("user")
         .populate("accepted_by")
@@ -172,13 +172,13 @@ router.get(
             res.status(200).send({
               status: true,
               message: "solutions found",
-              data: data
+              data: data,
             });
           } else {
             res.status(400).send({
               status: false,
               message: "unable to find solutions",
-              data: {}
+              data: {},
             });
           }
         });
@@ -186,7 +186,83 @@ router.get(
       res.status(401).send({
         status: false,
         message: "Authentication failed",
-        data: {}
+        data: {},
+      });
+    }
+  }
+);
+
+router.get(
+  "/searchSolution/:user_id/:auth_key/:solutionType/:searchBy/:searchString",
+  async (req, res) => {
+    console.log(
+      "in get search solution",
+      req.params.solutionType,
+      req.params.searchBy,
+      req.params.searchString
+    );
+    var query = {};
+    var searchBy = req.params.searchBy;
+    if (searchBy == "pickup_country") {
+      query = {
+        user_role: req.params.solutionType,
+        pickup_country: { $regex: req.params.searchString },
+      };
+    } else if (searchBy == "sub_category") {
+      query = {
+        user_role: req.params.solutionType,
+        $or: [
+          { "sub_category.en": { $regex: req.params.searchString } },
+          { "sub_category.fr": { $regex: req.params.searchString } },
+        ],
+      };
+    } else if (searchBy == "category") {
+      query = {
+        user_role: req.params.solutionType,
+        category: { $regex: req.params.searchString },
+      };
+    } else if (searchBy == "pickup_city") {
+      query = {
+        user_role: req.params.solutionType,
+        pickup_city: { $regex: req.params.searchString },
+      };
+    }
+    var valid_user = await new Promise((resolve, reject) => {
+      UserModel.findOne(
+        { _id: req.params.user_id, auth_key: req.params.auth_key },
+        (err, user) => {
+          if (!err) {
+            resolve(user);
+          } else {
+            reject(err);
+          }
+        }
+      );
+    });
+    if (valid_user) {
+      console.log(query);
+      SolutionModel.find(query)
+        .populate("user")
+        .exec((err, data) => {
+          if (!err) {
+            res.status(200).send({
+              status: true,
+              message: "solutions found",
+              data: data,
+            });
+          } else {
+            res.status(400).send({
+              status: false,
+              message: "unable to find solutions",
+              data: {},
+            });
+          }
+        });
+    } else {
+      res.status(401).send({
+        status: false,
+        message: "Authentication failed",
+        data: {},
       });
     }
   }
@@ -225,11 +301,11 @@ router.post("/addSolution", multipleUpload, async (req, res) => {
         }
       });
     })
-      .then(async fileUploadResponse => {
+      .then(async (fileUploadResponse) => {
         solution.category = solution_details.category;
         solution.sub_category.en = solution_details.en;
         solution.sub_category.fr = solution_details.fr;
-        solution.display_price=solution_details.display_price;
+        solution.display_price = solution_details.display_price;
         solution.sub_category_price_dollar =
           solution_details.sub_category_price_dollar;
         solution.sub_category_price_euro =
@@ -273,23 +349,23 @@ router.post("/addSolution", multipleUpload, async (req, res) => {
           res.status(200).send({
             status: true,
             message: "solution saved",
-            data: saved_solution
+            data: saved_solution,
           });
         } else {
           res.status(400).send({
             status: false,
             message: "Unable to save solution",
-            data: {}
+            data: {},
           });
         }
       })
-      .catch(err => {
+      .catch((err) => {
         console.log("error occured");
         console.log(err);
         res.status(422).send({
           status: false,
           message: err.errors,
-          data: {}
+          data: {},
         });
       });
   } else {
@@ -319,8 +395,8 @@ router.put("/solutionAccepted", async (req, res) => {
         {
           $set: {
             status: "Accepted",
-            accepted_by: ObjectID(solution.accepted_by)
-          }
+            accepted_by: ObjectID(solution.accepted_by),
+          },
         },
         { new: true }
       )
@@ -341,8 +417,8 @@ router.put("/solutionAccepted", async (req, res) => {
           { _id: solution.accepted_by },
           {
             $set: {
-              wallet: new_price
-            }
+              wallet: new_price,
+            },
           },
           { new: true },
           (err, user) => {
@@ -352,12 +428,12 @@ router.put("/solutionAccepted", async (req, res) => {
                 .create({
                   body: `Pickant App: Your offer is accepted by ${user.firstName} You can contact your supplier through email:${user.email} or through mobile number : ${user.mobile_no} `,
                   from: "(717) 415-5703",
-                  to: valid_user.mobile_no
+                  to: valid_user.mobile_no,
                 })
-                .then(message => {
+                .then((message) => {
                   resolve(message);
                 })
-                .catch(error => {
+                .catch((error) => {
                   reject(error);
                 });
             } else {
@@ -369,29 +445,42 @@ router.put("/solutionAccepted", async (req, res) => {
       res.status(200).send({
         status: true,
         message: "Solution updated successfuly",
-        data: updated_solution
+        data: updated_solution,
       });
     } else {
       res.status(409).send({
         status: false,
         message: "unable to update solution",
-        data: {}
+        data: {},
       });
     }
   } else {
     res.status(401).send({
       status: false,
       message: "Authentication failed",
-      data: {}
+      data: {},
     });
   }
 });
 
-router.post("/test", (req, res) => {
+router.get("/test", (req, res) => {
   console.log("in test");
-  UserModel.findOne({ _id: "5e4a250e594e090510f65cb9" }, (err, data) => {
-    res.send(data);
-  });
+  var s = "Ad";
+  // var query = /.*;
+  SolutionModel.find(
+    {
+      user_role: "provideSolution",
+      '$or': [
+        { "sub_category.en": { $regex: "Storage" } },
+        { "sub_category.fr": { $regex: "Storage" } },
+      ],
+    },
+    (err, data) => {
+      console.log(data);
+      console.log(err);
+      res.send(data);
+    }
+  );
   //res.send("Hello from test");
 });
 
