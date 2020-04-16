@@ -27,16 +27,19 @@ var multipleUpload = multer({ storage: storage }).array("file");
 router.post("/login", async (req, res) => {
   console.log("in login");
   let creds = req.body;
+  if (!creds.mobile_no) {
+    creds.mobile_no = "x";
+  }
   if (!creds.email) {
     creds.email = "x";
   }
   if (!creds.password) {
     creds.email = "x";
   }
-  creds.email = creds.email.toLowerCase();
+  // creds.email = creds.email.toLowerCase();
   const user = await new Promise((resolve, reject) => {
     UserModel.findOne(
-      { email: creds.email, password: creds.password },
+      { $or:[{mobile_no: creds.mobile_no}, {email:creds.email}] , password: creds.password },
       (err, user) => {
         if (!err) {
           resolve(user);
@@ -60,14 +63,14 @@ router.post("/login", async (req, res) => {
     var key = generateRandomString();
     const updated_user = await new Promise((resolve, reject) => {
       UserModel.findOneAndUpdate(
-        { email: req.body.email.toLowerCase() },
+        { $or:[{mobile_no: creds.mobile_no}, {email:creds.email}] },
         {
           $set: {
-            auth_key: key
-          }
+            auth_key: key,
+          },
         },
         { new: true },
-        function(error, auth_user) {
+        function (error, auth_user) {
           if (!error) {
             resolve(auth_user);
           } else {
@@ -81,13 +84,13 @@ router.post("/login", async (req, res) => {
       res.status(200).send({
         status: true,
         message: "User login successful",
-        data: updated_user
+        data: updated_user,
       });
     } else {
       res.status(401).send({
         status: false,
         message: "Unable to save auth token",
-        data: {}
+        data: {},
       });
     }
   }
@@ -126,14 +129,14 @@ router.post("/register", multipleUpload, async (req, res) => {
           }
         });
       })
-        .then(async fileUploadResponse => {
+        .then(async (fileUploadResponse) => {
           newUser.images = fileUploadResponse.locations;
         })
-        .catch(err => {
+        .catch((err) => {
           res.status(422).send({
             status: false,
             message: err.errors[0],
-            data: {}
+            data: {},
           });
         });
     }
@@ -164,18 +167,18 @@ router.post("/register", multipleUpload, async (req, res) => {
         }
       );
     })
-      .then(new_user => {
+      .then((new_user) => {
         res.status(200).send({
           status: true,
           message: "User registered successfully",
-          data: new_user
+          data: new_user,
         });
       })
-      .catch(err => {
+      .catch((err) => {
         res.status(401).send({
           status: false,
           message: "Unable to register user",
-          data: err
+          data: err,
         });
       });
   }
@@ -186,13 +189,16 @@ router.post("/sendMessage", async (req, res) => {
   var send_code = false;
   console.log(mobile_no);
   const unique_user = await new Promise((resolve, reject) => {
-    UserModel.findOne({ mobile_no: req.body.mobile_no }, (err, user) => {
-      if (!err) {
-        resolve(user);
-      } else {
-        reject(err);
+    UserModel.findOne(
+      { $or: [{ mobile_no: req.body.mobile_no }, { email: req.body.email }] },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
       }
-    });
+    );
   });
   if (!unique_user) {
     send_code = true;
@@ -205,66 +211,97 @@ router.post("/sendMessage", async (req, res) => {
   }
   if (send_code) {
     const code = generateRandomCode();
-    const msg = await new Promise((resolve, reject) => {
-      client.messages
-        .create({
-          body: `Use code ${code} to verify your phone number - Pickant`,
-          from: "(717) 415-5703",
-          to: mobile_no
+    // const validate_number = await client.lookups.phoneNumbers(mobile_no).fetch({ countryCode: "US" });
+    var validate_number = undefined;
+    validate_number = await new Promise((resolve, reject) => {
+      client.lookups
+        .phoneNumbers(mobile_no)
+        .fetch({ countryCode: "US" })
+        .then((phone_number) => {
+          console.log("in resolve");
+          console.log(phone_number.phoneNumber);
+          resolve(phone_number);
         })
-        .then(message => {
-          console.log(message.sid);
-          resolve(message);
-        })
-        .catch(error => {
-          console.log(error);
-          reject(error);
+        .catch(err => {
+          console.log("in reject");
+          console.log(err);
+          reject(err);
         });
-    });
-    if (msg) {
-      console.log("+++++++++ updating db++++++++++++++++++");
-      const updated_user = await new Promise((resolve, reject) => {
-        UserModel.findOneAndUpdate(
-          { mobile_no: mobile_no },
-          {
-            $set: {
-              verification_code: code
-            }
-          },
-          { upsert: true, new: true },
-          (error, user) => {
-            if (!error) {
-              console.log("user updated", user);
-              resolve(user);
-            } else {
-              console.log("error occured", error);
-              reject(error);
-            }
-          }
-        );
+    }).then(async validate_number =>{
+      console.log("number validated")
+      console.log(validate_number);
+      const msg = await new Promise((resolve, reject) => {
+        client.messages
+          .create({
+            body: `Use code ${code} to verify your phone number - Pickant`,
+            from: "(717) 415-5703",
+            to: mobile_no,
+          })
+          .then((message) => {
+            console.log(message.sid);
+            resolve(message);
+          })
+          .catch((error) => {
+            console.log(error);
+            reject(error);
+          });
       });
-      if (updated_user) {
-        res.status(200).send({
-          status: true,
-          message: "message sent and user updated",
-          data: updated_user
+      if (msg) {
+        console.log("+++++++++ updating db++++++++++++++++++");
+        const updated_user = await new Promise((resolve, reject) => {
+          UserModel.findOneAndUpdate(
+            { mobile_no: mobile_no },
+            {
+              $set: {
+                verification_code: code,
+              },
+            },
+            { upsert: true, new: true },
+            (error, user) => {
+              if (!error) {
+                console.log("user updated", user);
+                resolve(user);
+              } else {
+                console.log("error occured", error);
+                reject(error);
+              }
+            }
+          );
         });
+        if (updated_user) {
+          res.status(200).send({
+            status: true,
+            message: "message sent and user updated",
+            data: updated_user,
+          });
+        } else {
+          res.status(401).send({
+            status: false,
+            message: "Unable to save code in db",
+            data: {},
+          });
+        }
       } else {
-        res.status(401).send({
-          status: false,
-          message: "Unable to save code in db",
-          data: {}
-        });
+        res
+          .status(401)
+          .send({ status: false, message: "Unable to send message", data: {} });
       }
-    } else {
-      res
-        .status(401)
-        .send({ status: false, message: "Unable to send message", data: {} });
-    }
+    }).catch(err =>{
+      console.log(err);
+      console.log("invalid number");
+      res.status(404).send({
+        status: false,
+        message: "Invalid Number",
+        data: {},
+      });
+    });
+    
   } else {
-    res
-      .status(409)
-      .send({ status: false, message: "User already exists", data: {} });
+    res.status(409).send({
+      status: false,
+      message: "User already register with same phone number or email",
+      data: {},
+    });
   }
 });
 
@@ -300,8 +337,8 @@ router.put("/updatePassword", async (req, res) => {
       { mobile_no: user.mobile_no },
       {
         $set: {
-          password: user.password
-        }
+          password: user.password,
+        },
       },
       { new: true },
       (err, data) => {
@@ -317,7 +354,7 @@ router.put("/updatePassword", async (req, res) => {
     res.status(200).send({
       status: true,
       message: "Password updated successfuly",
-      data: updated_user
+      data: updated_user,
     });
   } else {
     res
@@ -348,8 +385,8 @@ router.put("/verifyUser", async (req, res) => {
       {
         $set: {
           verified: req.body.verifyFlag,
-          verified_by: req.body.user_id
-        }
+          verified_by: req.body.user_id,
+        },
       },
       { new: true },
       (error, user) => {
@@ -367,13 +404,13 @@ router.put("/verifyUser", async (req, res) => {
     res.status(200).send({
       status: true,
       message: "User verified",
-      data: updated_user
+      data: updated_user,
     });
   } else {
     res.status(401).send({
       status: false,
       message: "User verification failed",
-      data: {}
+      data: {},
     });
   }
   // } else {
@@ -401,7 +438,7 @@ router.put("/updateUser", multipleUpload, async (req, res) => {
       }
     });
   })
-    .then(async fileUploadResponse => {
+    .then(async (fileUploadResponse) => {
       var valid_user = await new Promise((resolve, reject) => {
         UserModel.findOne(
           { _id: req.body.user_id, auth_key: req.body.auth_key },
@@ -436,28 +473,28 @@ router.put("/updateUser", multipleUpload, async (req, res) => {
           res.status(200).send({
             status: true,
             message: "User updated successfuly",
-            data: updated_user
+            data: updated_user,
           });
         } else {
           res.status(401).send({
             status: false,
             message: "Unable to update user",
-            data: {}
+            data: {},
           });
         }
       } else {
         res.status(401).send({
           status: false,
           message: "Authentication failed",
-          data: {}
+          data: {},
         });
       }
     })
-    .catch(err => {
+    .catch((err) => {
       res.status(422).send({
         status: false,
         message: err.errors[0],
-        data: {}
+        data: {},
       });
     });
 });
@@ -477,8 +514,8 @@ router.post("/updateSubscription", async (req, res) => {
           "subscription.trail_complete": req.body.trail_complete,
           "subscription.subscription_type": "90 days trail",
           "subscription.subscription_start_date": current_date,
-          "subscription.subscription_end_date": end_date
-        }
+          "subscription.subscription_end_date": end_date,
+        },
       },
       { new: true },
       (err, user) => {
@@ -494,13 +531,13 @@ router.post("/updateSubscription", async (req, res) => {
     res.status(200).send({
       status: true,
       message: "User updated successfuly",
-      data: valid_user
+      data: valid_user,
     });
   } else {
     res.status(401).send({
       status: false,
       message: "Authentication failed",
-      data: {}
+      data: {},
     });
   }
 });
@@ -522,7 +559,7 @@ router.get("/getUser/:id/:user_id/:auth_key", async (req, res) => {
   });
   if (user_data) {
     console.log(user_data);
-    UserModel.findOne({ _id: req.params.user_id }, function(err, user) {
+    UserModel.findOne({ _id: req.params.user_id }, function (err, user) {
       if (!err) {
         var end_user = {};
         end_user.firstName = user.firstName;
@@ -536,7 +573,7 @@ router.get("/getUser/:id/:user_id/:auth_key", async (req, res) => {
         res.status(200).send({
           status: true,
           message: "User login successful",
-          data: end_user
+          data: end_user,
         });
       } else {
         console.log("error occured");
@@ -544,9 +581,9 @@ router.get("/getUser/:id/:user_id/:auth_key", async (req, res) => {
           status: false,
           message: {
             en: "Invalid Credentials",
-            fr: "Les informations invalids"
+            fr: "Les informations invalids",
           },
-          data: {}
+          data: {},
         });
       }
     });
@@ -554,7 +591,7 @@ router.get("/getUser/:id/:user_id/:auth_key", async (req, res) => {
     res.status(401).send({
       status: false,
       message: "User verification failed",
-      data: {}
+      data: {},
     });
   }
 });
@@ -574,21 +611,21 @@ router.get("/getAllUsers", async (req, res) => {
   //   );
   // });
   // if(user_data && user_data.admin){
-  UserModel.find({}, function(err, users) {
+  UserModel.find({}, function (err, users) {
     if (!err) {
       res.status(200).send({
         status: true,
         message: "all users fetched",
-        data: users
+        data: users,
       });
     } else {
       res.status(401).send({
         status: false,
         message: {
           en: "Invalid Credentials",
-          fr: "Les informations invalids"
+          fr: "Les informations invalids",
         },
-        data: {}
+        data: {},
       });
     }
   });
@@ -616,7 +653,7 @@ router.delete("/deleteUser/:admin_id/:user_id/:auth_key", async (req, res) => {
   });
   if (user_data && user_data.admin) {
     const removed_user = await new Promise((resolve, reject) => {
-      UserModel.findOneAndRemove({ _id: req.params.user_id }, function(
+      UserModel.findOneAndRemove({ _id: req.params.user_id }, function (
         err,
         users
       ) {
@@ -628,7 +665,7 @@ router.delete("/deleteUser/:admin_id/:user_id/:auth_key", async (req, res) => {
       });
     });
     if (removed_user) {
-      SolutionModel.deleteMany({ user: req.params.user_id }, function(
+      SolutionModel.deleteMany({ user: req.params.user_id }, function (
         error,
         solutions
       ) {
@@ -636,13 +673,13 @@ router.delete("/deleteUser/:admin_id/:user_id/:auth_key", async (req, res) => {
           res.status(200).send({
             status: true,
             message: "user and solution deleted",
-            data: solutions
+            data: solutions,
           });
         } else {
           res.status(401).send({
             status: false,
             message: "unable to delete solution",
-            data: {}
+            data: {},
           });
         }
       });
@@ -650,22 +687,29 @@ router.delete("/deleteUser/:admin_id/:user_id/:auth_key", async (req, res) => {
       res.status(401).send({
         status: false,
         message: "unable to delete user",
-        data: {}
+        data: {},
       });
     }
   } else {
     res.status(401).send({
       status: false,
       message: "Authentication failed",
-      data: {}
+      data: {},
     });
   }
 });
 
-router.get("/test", (req, res) => {
+router.get("/test",async (req, res) => {
   console.log("in test");
-
-  res.send("Hello from test");
+  const test = await client.lookups
+    .phoneNumbers("+9230094984311").fetch({ countryCode: "US" }).then((phone_number) => {
+      console.log(phone_number.phoneNumber);
+      res.send(phone_number);
+    })
+    .catch((err) => {
+      console.log(err);
+      res.send(err);
+    });
 });
 
 function generateRandomString() {

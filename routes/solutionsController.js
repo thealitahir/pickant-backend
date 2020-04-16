@@ -208,25 +208,25 @@ router.get(
     if (searchBy == "pickup_country") {
       query = {
         user_role: req.params.solutionType,
-        pickup_country: { $regex: req.params.searchString },
+        pickup_country: { $regex: new RegExp("^" + req.params.searchString.toLowerCase(),"i") },
       };
     } else if (searchBy == "sub_category") {
       query = {
         user_role: req.params.solutionType,
         $or: [
-          { "sub_category.en": { $regex: req.params.searchString } },
-          { "sub_category.fr": { $regex: req.params.searchString } },
+          { "sub_category.en": { $regex: new RegExp("^" + req.params.searchString.toLowerCase(),"i") } },
+          { "sub_category.fr": { $regex: new RegExp("^" + req.params.searchString.toLowerCase(),"i") } },
         ],
       };
     } else if (searchBy == "category") {
       query = {
         user_role: req.params.solutionType,
-        category: { $regex: req.params.searchString },
+        category: { $regex: new RegExp("^" + req.params.searchString.toLowerCase(),"i") },
       };
     } else if (searchBy == "pickup_city") {
       query = {
         user_role: req.params.solutionType,
-        pickup_city: { $regex: req.params.searchString },
+        pickup_city: { $regex: new RegExp("^" + req.params.searchString.toLowerCase(),"i") },
       };
     }
     var valid_user = await new Promise((resolve, reject) => {
