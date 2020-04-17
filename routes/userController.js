@@ -27,6 +27,7 @@ var multipleUpload = multer({ storage: storage }).array("file");
 router.post("/login", async (req, res) => {
   console.log("in login");
   let creds = req.body;
+  console.log(creds);
   if (!creds.email) {
     creds.email = "x";
   }
@@ -60,7 +61,7 @@ router.post("/login", async (req, res) => {
     var key = generateRandomString();
     const updated_user = await new Promise((resolve, reject) => {
       UserModel.findOneAndUpdate(
-        { $or:[{mobile_no: creds.mobile_no}, {email:creds.email}] },
+        { $or:[{mobile_no: creds.email}, {email:creds.email}] },
         {
           $set: {
             auth_key: key,
