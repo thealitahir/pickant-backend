@@ -291,7 +291,7 @@ router.post("/sendMessage", async (req, res) => {
       console.log("invalid number");
       res.status(404).send({
         status: false,
-        message: "Invalid Number",
+        message: "Invalid Phone Number",
         data: {},
       });
     });
