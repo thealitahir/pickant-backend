@@ -50,17 +50,15 @@ router.post("/login", async (req, res) => {
   });
 
   if (!user) {
-    console.log("returning error");
     res
       .status(401)
       .send({ status: false, message: "Invalid Credentials", data: {} });
   } else {
-    console.log(req.body);
     console.log(user);
     var key = generateRandomString();
     const updated_user = await new Promise((resolve, reject) => {
       UserModel.findOneAndUpdate(
-        { $or:[{mobile_no: creds.mobile_no}, {email:creds.email}] },
+        { $or:[{mobile_no: creds.email}, {email:creds.email}] },
         {
           $set: {
             auth_key: key,
