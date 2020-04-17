@@ -27,7 +27,6 @@ var multipleUpload = multer({ storage: storage }).array("file");
 router.post("/login", async (req, res) => {
   console.log("in login");
   let creds = req.body;
-  console.log(creds);
   if (!creds.email) {
     creds.email = "x";
   }
@@ -51,12 +50,10 @@ router.post("/login", async (req, res) => {
   });
 
   if (!user) {
-    console.log("returning error");
     res
       .status(401)
       .send({ status: false, message: "Invalid Credentials", data: {} });
   } else {
-    console.log(req.body);
     console.log(user);
     var key = generateRandomString();
     const updated_user = await new Promise((resolve, reject) => {
