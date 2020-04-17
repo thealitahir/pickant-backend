@@ -27,9 +27,6 @@ var multipleUpload = multer({ storage: storage }).array("file");
 router.post("/login", async (req, res) => {
   console.log("in login");
   let creds = req.body;
-  if (!creds.mobile_no) {
-    creds.mobile_no = "x";
-  }
   if (!creds.email) {
     creds.email = "x";
   }
@@ -39,7 +36,7 @@ router.post("/login", async (req, res) => {
   // creds.email = creds.email.toLowerCase();
   const user = await new Promise((resolve, reject) => {
     UserModel.findOne(
-      { $or:[{mobile_no: creds.mobile_no}, {email:creds.email}] , password: creds.password },
+      { $or:[{mobile_no: creds.email}, {email:creds.email}] , password: creds.password },
       (err, user) => {
         if (!err) {
           resolve(user);
