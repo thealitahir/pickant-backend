@@ -13,23 +13,25 @@ var uploadFile = require("./fileUpload");
 var storage = multer.memoryStorage();
 var multipleUpload = multer({ storage: storage }).array("file");
 
-router.get("/getAllSolutions/:role", async (req, res) => {
-  console.log("in get all solutions");
-  console.log(req.params.role);
-  // var valid_user = await new Promise((resolve, reject) => {
-  //   UserModel.findOne(
-  //     { _id: req.params.user_id, auth_key: req.params.auth_key },
-  //     (err, user) => {
-  //       if (!err) {
-  //         resolve(user);
-  //       } else {
-  //         reject(err);
-  //       }
-  //     }
-  //   );
-  // });
-  
-  // if (valid_user) {
+router.get(
+  "/getAllSolutions/:role",
+  async (req, res) => {
+    console.log("in get all solutions");
+    console.log(req.params.role);
+    // var valid_user = await new Promise((resolve, reject) => {
+    //   UserModel.findOne(
+    //     { _id: req.params.user_id, auth_key: req.params.auth_key },
+    //     (err, user) => {
+    //       if (!err) {
+    //         resolve(user);
+    //       } else {
+    //         reject(err);
+    //       }
+    //     }
+    //   );
+    // });
+
+    // if (valid_user) {
     SolutionModel.find({ user_role: req.params.role, status: "Pending" })
       .populate("user")
       .exec((err, data) => {
@@ -48,14 +50,14 @@ router.get("/getAllSolutions/:role", async (req, res) => {
         }
       });
   }
-//    else {
-//     res.status(401).send({
-//       status: false,
-//       message: "Authentication failed",
-//       data: {}
-//     });
-//   }
-// }
+  //    else {
+  //     res.status(401).send({
+  //       status: false,
+  //       message: "Authentication failed",
+  //       data: {}
+  //     });
+  //   }
+  // }
 );
 
 router.get(
@@ -205,28 +207,81 @@ router.get(
     );
     var query = {};
     var searchBy = req.params.searchBy;
+    console.log(req.params.searchString);
+    var searchString = frenchToEnglish(req.params.searchString);
+    console.log(searchString);
     if (searchBy == "pickup_country") {
       query = {
         user_role: req.params.solutionType,
-        pickup_country: { $regex: new RegExp("^" + req.params.searchString.toLowerCase(),"i") },
+        $or: [
+          {
+            pickup_country: {
+              $regex: new RegExp("^" + searchString.toLowerCase(), "i"),
+            },
+          },
+          {
+            pickup_country: {
+              $regex: new RegExp(
+                "^" + req.params.searchString.toLowerCase(),
+                "i"
+              ),
+            },
+          },
+        ],
       };
     } else if (searchBy == "sub_category") {
       query = {
         user_role: req.params.solutionType,
         $or: [
-          { "sub_category.en": { $regex: new RegExp("^" + req.params.searchString.toLowerCase(),"i") } },
-          { "sub_category.fr": { $regex: new RegExp("^" + req.params.searchString.toLowerCase(),"i") } },
+          {
+            "sub_category.en": {
+              $regex: new RegExp("^" + searchString.toLowerCase(), "i"),
+            },
+          },
+          {
+            "sub_category.fr": {
+              $regex: new RegExp("^" + searchString.toLowerCase(), "i"),
+            },
+          },
         ],
       };
     } else if (searchBy == "category") {
       query = {
         user_role: req.params.solutionType,
-        category: { $regex: new RegExp("^" + req.params.searchString.toLowerCase(),"i") },
+        $or: [
+          {
+            category: {
+              $regex: new RegExp("^" + searchString.toLowerCase(), "i"),
+            },
+          },
+          {
+            category: {
+              $regex: new RegExp(
+                "^" + req.params.searchString.toLowerCase(),
+                "i"
+              ),
+            },
+          },
+        ],
       };
     } else if (searchBy == "pickup_city") {
       query = {
-        user_role: req.params.solutionType,
-        pickup_city: { $regex: new RegExp("^" + req.params.searchString.toLowerCase(),"i") },
+        user_role: searchString,
+        $or: [
+          {
+            pickup_city: {
+              $regex: new RegExp("^" + searchString.toLowerCase(), "i"),
+            },
+          },
+          {
+            pickup_city: {
+              $regex: new RegExp(
+                "^" + req.params.searchString.toLowerCase(),
+                "i"
+              ),
+            },
+          },
+        ],
       };
     }
     var valid_user = await new Promise((resolve, reject) => {
@@ -467,9 +522,11 @@ router.put("/solutionAccepted", async (req, res) => {
 
 router.get("/test", (req, res) => {
   console.log("in test");
-  var s = "Ad";
+  var s = "é, è, ë, ê, à, â, î, ï, ô, ü, ù, û, ÿ,é,ë";
+  var newS = frenchToEnglish(s);
+  res.send(newS);
   // var query = /.*;
-  SolutionModel.find(
+  /* SolutionModel.find(
     {
       user_role: "provideSolution",
       '$or': [
@@ -482,8 +539,28 @@ router.get("/test", (req, res) => {
       console.log(err);
       res.send(data);
     }
-  );
+  ); */
   //res.send("Hello from test");
 });
+
+function frenchToEnglish(text) {
+  console.log("in frenchToEnglish");
+  var str = text
+    .replace(/é|_/g, "e")
+    .replace(/è|_/g, "e")
+    .replace(/ë|_/g, "e")
+    .replace(/ê|_/g, "e")
+    .replace(/à|_/g, "a")
+    .replace(/â|_/g, "a")
+    .replace(/î|_/g, "i")
+    .replace(/ï|_/g, "i")
+    .replace(/ô|_/g, "o")
+    .replace(/ü|_/g, "u")
+    .replace(/ù|_/g, "u")
+    .replace(/û|_/g, "u")
+    .replace(/ÿ|_/g, "y");
+  console.log(str);
+  return str;
+}
 
 module.exports = router;
