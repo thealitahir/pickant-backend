@@ -180,7 +180,7 @@ router.post("/register", multipleUpload, async (req, res) => {
 });
 
 router.post("/sendMessage", async (req, res) => {
-  const mobile_no = req.body.mobile_no;
+  var mobile_no = req.body.mobile_no;
   var send_code = false;
   console.log(mobile_no);
   const unique_user = await new Promise((resolve, reject) => {
@@ -215,6 +215,7 @@ router.post("/sendMessage", async (req, res) => {
         .then((phone_number) => {
           console.log("in resolve");
           console.log(phone_number.phoneNumber);
+          mobile_no = phone_number.phoneNumber;
           resolve(phone_number);
         })
         .catch(err => {
@@ -242,7 +243,7 @@ router.post("/sendMessage", async (req, res) => {
           });
       });
       if (msg) {
-        console.log("+++++++++ updating db++++++++++++++++++");
+        console.log("+++++++++ updating db++++++++++++++++++",mobile_no);
         const updated_user = await new Promise((resolve, reject) => {
           UserModel.findOneAndUpdate(
             { mobile_no: mobile_no },
@@ -695,9 +696,10 @@ router.delete("/deleteUser/:admin_id/:user_id/:auth_key", async (req, res) => {
 });
 
 router.get("/test",async (req, res) => {
-  console.log("in test");
+  var num = "+9203009498431"
+  console.log("in test",num);
   const test = await client.lookups
-    .phoneNumbers("+9230094984311").fetch({ countryCode: "US" }).then((phone_number) => {
+    .phoneNumbers(num).fetch({ countryCode: "US" }).then((phone_number) => {
       console.log(phone_number.phoneNumber);
       res.send(phone_number);
     })
