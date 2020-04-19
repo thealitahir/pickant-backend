@@ -3,6 +3,9 @@ var router = express.Router();
 var SolutionModel = require("../models/solutions");
 var UserModel = require("../models/user");
 var ObjectID = require("objectid");
+// const translate = require('translate');
+const translate = require("@vitalets/google-translate-api");
+
 const client = require("twilio")(
   process.env.TWILIO_ACCOUNTSID,
   process.env.TWILIO_AUTHTOKEN
@@ -520,11 +523,14 @@ router.put("/solutionAccepted", async (req, res) => {
   }
 });
 
-router.get("/test", (req, res) => {
+router.get("/test", async (req, res) => {
   console.log("in test");
-  var s = "é, è, ë, ê, à, â, î, ï, ô, ü, ù, û, ÿ,é,ë";
-  var newS = frenchToEnglish(s);
-  res.send(newS);
+  // var s = "é, è, ë, ê, à, â, î, ï, ô, ü, ù, û, ÿ,é,ë";
+  var s = "senegal";
+  englishToFrench(s, (data)=>{
+    console.log("returned response########",data);
+    res.send(data);
+  });
   // var query = /.*;
   /* SolutionModel.find(
     {
@@ -563,4 +569,16 @@ function frenchToEnglish(text) {
   return str;
 }
 
+function englishToFrench(text,cb) {
+  console.log("in englishToFrench",text);
+  translate(text, { to: "fr" })
+    .then((res) => {
+      console.log("response >>>>> ",res);
+      // console.log(res.from.language.iso);
+      cb(res.text);
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+}
 module.exports = router;

@@ -42,13 +42,17 @@ mongoose.connect(
   opt
 );
 var db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
+var server = app.listen(process.env.PORT || 8080, process.env.HOST, function() {
+  console.log('Server started on port :' + process.env.PORT);
+});
+io = require('socket.io').listen(server);
+/* db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function() {
   console.log('DB CONNECTED', process.env.PORT);
   var server = app.listen(process.env.PORT || 8080, process.env.HOST, function() {
     console.log('Server started on port :' + process.env.PORT);
   });
   io = require('socket.io').listen(server);
-});
+}); */
 
 module.exports = app;
