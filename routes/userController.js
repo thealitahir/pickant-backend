@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 var UserModel = require("../models/user");
 var SolutionModel = require("../models/solutions");
+var VerificationModel = require("../models/verification");
 const nodemailer = require("nodemailer");
 var http = require("https");
 const sgMail = require("@sendgrid/mail");
@@ -245,7 +246,7 @@ router.post("/sendMessage", async (req, res) => {
       if (msg) {
         console.log("+++++++++ updating db++++++++++++++++++",mobile_no);
         const updated_user = await new Promise((resolve, reject) => {
-          UserModel.findOneAndUpdate(
+          VerificationModel.findOneAndUpdate(
             { mobile_no: mobile_no },
             {
               $set: {
@@ -304,7 +305,7 @@ router.post("/sendMessage", async (req, res) => {
 router.post("/codeValidation", async (req, res) => {
   console.log(req.body.mobile_no, req.body.code);
   const user_data = await new Promise((resolve, reject) => {
-    UserModel.findOne(
+    VerificationModel.findOne(
       { mobile_no: req.body.mobile_no, verification_code: req.body.code },
       (err, record) => {
         if (!err) {
@@ -316,10 +317,12 @@ router.post("/codeValidation", async (req, res) => {
     );
   });
   if (user_data) {
+    console.log("code verified", user_data);
     res
       .status(200)
       .send({ status: true, message: "Code verified", data: user_data });
   } else {
+    console.log("Unable to verify code");
     res
       .status(401)
       .send({ status: false, message: "Unable to verify code", data: {} });

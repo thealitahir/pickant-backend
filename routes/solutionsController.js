@@ -530,7 +530,7 @@ router.put("/solutionAccepted", async (req, res) => {
 router.get("/test", async (req, res) => {
   console.log("in test");
   // var s = "é, è, ë, ê, à, â, î, ï, ô, ü, ù, û, ÿ,é,ë";
-  var s = "Senegal";
+  var s = "équipement";
   frenchToEnglish(s, (data) => {
     console.log("returned response########", data);
     res.send(data);
@@ -555,7 +555,7 @@ router.get("/test", async (req, res) => {
 
 function frenchToEnglish(text, cb) {
   console.log("in frenchToEnglish", text);
-  translate(text, { to: "en" })
+  translate(text.toLowerCase(), { to: "en" })
     .then((res) => {
       console.log("response >>>>> ", res);
       // console.log(res.from.language.iso);
@@ -584,7 +584,7 @@ function frenchToEnglish(text, cb) {
 
 function englishToFrench(text, cb) {
   console.log("in englishToFrench", text);
-  translate(text, { to: "fr" })
+  translate(text.toLowerCase(), { to: "fr" })
     .then((res) => {
       console.log("response >>>>> ", res);
       // console.log(res.from.language.iso);
