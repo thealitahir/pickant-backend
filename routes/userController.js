@@ -58,7 +58,7 @@ router.post("/login", async (req, res) => {
     var key = generateRandomString();
     const updated_user = await new Promise((resolve, reject) => {
       UserModel.findOneAndUpdate(
-        { $or:[{mobile_no: creds.email}, {email:creds.email}] },
+        { $or:[{mobile_no: creds.email}, {email:creds.email.toLowerCase()}] },
         {
           $set: {
             auth_key: key,

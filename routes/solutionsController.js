@@ -211,120 +211,124 @@ router.get(
     var query = {};
     var searchBy = req.params.searchBy;
     console.log(req.params.searchString);
-    var searchString = frenchToEnglish(req.params.searchString);
-    console.log(searchString);
-    if (searchBy == "pickup_country") {
-      query = {
-        user_role: req.params.solutionType,
-        $or: [
-          {
-            pickup_country: {
-              $regex: new RegExp("^" + searchString.toLowerCase(), "i"),
-            },
-          },
-          {
-            pickup_country: {
-              $regex: new RegExp(
-                "^" + req.params.searchString.toLowerCase(),
-                "i"
-              ),
-            },
-          },
-        ],
-      };
-    } else if (searchBy == "sub_category") {
-      query = {
-        user_role: req.params.solutionType,
-        $or: [
-          {
-            "sub_category.en": {
-              $regex: new RegExp("^" + searchString.toLowerCase(), "i"),
-            },
-          },
-          {
-            "sub_category.fr": {
-              $regex: new RegExp("^" + searchString.toLowerCase(), "i"),
-            },
-          },
-        ],
-      };
-    } else if (searchBy == "category") {
-      query = {
-        user_role: req.params.solutionType,
-        $or: [
-          {
-            category: {
-              $regex: new RegExp("^" + searchString.toLowerCase(), "i"),
-            },
-          },
-          {
-            category: {
-              $regex: new RegExp(
-                "^" + req.params.searchString.toLowerCase(),
-                "i"
-              ),
-            },
-          },
-        ],
-      };
-    } else if (searchBy == "pickup_city") {
-      query = {
-        user_role: searchString,
-        $or: [
-          {
-            pickup_city: {
-              $regex: new RegExp("^" + searchString.toLowerCase(), "i"),
-            },
-          },
-          {
-            pickup_city: {
-              $regex: new RegExp(
-                "^" + req.params.searchString.toLowerCase(),
-                "i"
-              ),
-            },
-          },
-        ],
-      };
-    }
-    var valid_user = await new Promise((resolve, reject) => {
-      UserModel.findOne(
-        { _id: req.params.user_id, auth_key: req.params.auth_key },
-        (err, user) => {
-          if (!err) {
-            resolve(user);
-          } else {
-            reject(err);
-          }
+    frenchToEnglish(req.params.searchString, (englishString) => {
+      englishToFrench(req.params.searchString, async (frenchString) => {
+        if (searchBy == "pickup_country") {
+          query = {
+            user_role: req.params.solutionType,
+            $or: [
+              {
+                pickup_country: {
+                  $regex: new RegExp("^" + englishString.toLowerCase(), "i"),
+                },
+              },
+              {
+                pickup_country: {
+                  $regex: new RegExp("^" + frenchString.toLowerCase(), "i"),
+                },
+              },
+            ],
+          };
+        } else if (searchBy == "sub_category") {
+          query = {
+            user_role: req.params.solutionType,
+            $or: [
+              {
+                "sub_category.en": {
+                  $regex: new RegExp(
+                    "^" + req.params.searchString.toLowerCase(),
+                    "i"
+                  ),
+                },
+              },
+              {
+                "sub_category.fr": {
+                  $regex: new RegExp(
+                    "^" + req.params.searchString.toLowerCase(),
+                    "i"
+                  ),
+                },
+              },
+            ],
+          };
+        } else if (searchBy == "category") {
+          query = {
+            user_role: req.params.solutionType,
+            $or: [
+              {
+                category: {
+                  $regex: new RegExp("^" + englishString.toLowerCase(), "i"),
+                },
+              },
+              {
+                category: {
+                  $regex: new RegExp("^" + frenchString.toLowerCase(), "i"),
+                },
+              },
+            ],
+          };
+        } else if (searchBy == "pickup_city") {
+          query = {
+            user_role: searchString,
+            $or: [
+              {
+                pickup_city: {
+                  $regex: new RegExp("^" + englishString.toLowerCase(), "i"),
+                },
+              },
+              {
+                pickup_city: {
+                  $regex: new RegExp(
+                    "^" + req.params.frenchString.toLowerCase(),
+                    "i"
+                  ),
+                },
+              },
+            ],
+          };
         }
-      );
-    });
-    if (valid_user) {
-      console.log(query);
-      SolutionModel.find(query)
-        .populate("user")
-        .exec((err, data) => {
-          if (!err) {
-            res.status(200).send({
-              status: true,
-              message: "solutions found",
-              data: data,
-            });
-          } else {
-            res.status(400).send({
-              status: false,
-              message: "unable to find solutions",
-              data: {},
-            });
-          }
+        console.log(query);
+        var valid_user = await new Promise((resolve, reject) => {
+          UserModel.findOne(
+            { _id: req.params.user_id, auth_key: req.params.auth_key },
+            (err, user) => {
+              if (!err) {
+                resolve(user);
+              } else {
+                reject(err);
+              }
+            }
+          );
         });
-    } else {
-      res.status(401).send({
-        status: false,
-        message: "Authentication failed",
-        data: {},
+        if (valid_user) {
+          console.log(query);
+          SolutionModel.find(query)
+            .populate("user")
+            .exec((err, data) => {
+              if (!err) {
+                res.status(200).send({
+                  status: true,
+                  message: "solutions found",
+                  data: data,
+                });
+              } else {
+                res.status(400).send({
+                  status: false,
+                  message: "unable to find solutions",
+                  data: {},
+                });
+              }
+            });
+        } else {
+          res.status(401).send({
+            status: false,
+            message: "Authentication failed",
+            data: {},
+          });
+        }
       });
-    }
+    });
+
   }
 );
 
@@ -526,9 +530,9 @@ router.put("/solutionAccepted", async (req, res) => {
 router.get("/test", async (req, res) => {
   console.log("in test");
   // var s = "é, è, ë, ê, à, â, î, ï, ô, ü, ù, û, ÿ,é,ë";
-  var s = "senegal";
-  englishToFrench(s, (data)=>{
-    console.log("returned response########",data);
+  var s = "Senegal";
+  frenchToEnglish(s, (data) => {
+    console.log("returned response########", data);
     res.send(data);
   });
   // var query = /.*;
@@ -549,9 +553,18 @@ router.get("/test", async (req, res) => {
   //res.send("Hello from test");
 });
 
-function frenchToEnglish(text) {
-  console.log("in frenchToEnglish");
-  var str = text
+function frenchToEnglish(text, cb) {
+  console.log("in frenchToEnglish", text);
+  translate(text, { to: "en" })
+    .then((res) => {
+      console.log("response >>>>> ", res);
+      // console.log(res.from.language.iso);
+      cb(res.text);
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+  /* var str = text
     .replace(/é|_/g, "e")
     .replace(/è|_/g, "e")
     .replace(/ë|_/g, "e")
@@ -566,14 +579,14 @@ function frenchToEnglish(text) {
     .replace(/û|_/g, "u")
     .replace(/ÿ|_/g, "y");
   console.log(str);
-  return str;
+  return str; */
 }
 
-function englishToFrench(text,cb) {
-  console.log("in englishToFrench",text);
+function englishToFrench(text, cb) {
+  console.log("in englishToFrench", text);
   translate(text, { to: "fr" })
     .then((res) => {
-      console.log("response >>>>> ",res);
+      console.log("response >>>>> ", res);
       // console.log(res.from.language.iso);
       cb(res.text);
     })
