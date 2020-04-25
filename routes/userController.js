@@ -22,6 +22,9 @@ const client = require("twilio")(
   process.env.TWILIO_ACCOUNTSID,
   process.env.TWILIO_AUTHTOKEN
 );
+const service = client.notify.services(
+  process.env.TWILIO_MESSAGING_SERVICE_SID
+);
 var storage = multer.memoryStorage();
 var multipleUpload = multer({ storage: storage }).array("file");
 
@@ -37,7 +40,10 @@ router.post("/login", async (req, res) => {
   // creds.email = creds.email.toLowerCase();
   const user = await new Promise((resolve, reject) => {
     UserModel.findOne(
-      { $or:[{mobile_no: creds.email}, {email:creds.email}] , password: creds.password },
+      {
+        $or: [{ mobile_no: creds.email }, { email: creds.email }],
+        password: creds.password,
+      },
       (err, user) => {
         if (!err) {
           resolve(user);
@@ -59,7 +65,12 @@ router.post("/login", async (req, res) => {
     var key = generateRandomString();
     const updated_user = await new Promise((resolve, reject) => {
       UserModel.findOneAndUpdate(
-        { $or:[{mobile_no: creds.email}, {email:creds.email.toLowerCase()}] },
+        {
+          $or: [
+            { mobile_no: creds.email },
+            { email: creds.email.toLowerCase() },
+          ],
+        },
         {
           $set: {
             auth_key: key,
@@ -219,84 +230,258 @@ router.post("/sendMessage", async (req, res) => {
           mobile_no = phone_number.phoneNumber;
           resolve(phone_number);
         })
-        .catch(err => {
+        .catch((err) => {
           console.log("in reject");
           console.log(err);
           reject(err);
         });
-    }).then(async validate_number =>{
-      console.log("number validated")
-      console.log(validate_number);
-      const msg = await new Promise((resolve, reject) => {
-        client.messages
-          .create({
-            body: `Use code ${code} to verify your phone number - Pickant`,
-            from: "(717) 415-5703",
-            to: mobile_no,
-          })
-          .then((message) => {
-            console.log(message.sid);
-            resolve(message);
-          })
-          .catch((error) => {
-            console.log(error);
-            reject(error);
-          });
-      });
-      if (msg) {
-        console.log("+++++++++ updating db++++++++++++++++++",mobile_no);
-        const updated_user = await new Promise((resolve, reject) => {
-          VerificationModel.findOneAndUpdate(
-            { mobile_no: mobile_no },
-            {
-              $set: {
-                verification_code: code,
-              },
-            },
-            { upsert: true, new: true },
-            (error, user) => {
-              if (!error) {
-                console.log("user updated", user);
-                resolve(user);
-              } else {
-                console.log("error occured", error);
-                reject(error);
-              }
-            }
-          );
+    })
+      .then(async (validate_number) => {
+        console.log("number validated");
+        console.log(validate_number);
+        const msg = await new Promise((resolve, reject) => {
+          client.messages
+            .create({
+              body: `Use code ${code} to verify your phone number - Pickant`,
+              from: "(717) 415-5703",
+              to: mobile_no,
+            })
+            .then((message) => {
+              console.log(message.sid);
+              resolve(message);
+            })
+            .catch((error) => {
+              console.log(error);
+              reject(error);
+            });
         });
-        if (updated_user) {
-          res.status(200).send({
-            status: true,
-            message: "message sent and user updated",
-            data: updated_user,
+        if (msg) {
+          console.log("+++++++++ updating db++++++++++++++++++", mobile_no);
+          const updated_user = await new Promise((resolve, reject) => {
+            VerificationModel.findOneAndUpdate(
+              { mobile_no: mobile_no },
+              {
+                $set: {
+                  verification_code: code,
+                },
+              },
+              { upsert: true, new: true },
+              (error, user) => {
+                if (!error) {
+                  console.log("user updated", user);
+                  resolve(user);
+                } else {
+                  console.log("error occured", error);
+                  reject(error);
+                }
+              }
+            );
           });
+          if (updated_user) {
+            res.status(200).send({
+              status: true,
+              message: "message sent and user updated",
+              data: updated_user,
+            });
+          } else {
+            res.status(401).send({
+              status: false,
+              message: "Unable to save code in db",
+              data: {},
+            });
+          }
         } else {
           res.status(401).send({
             status: false,
-            message: "Unable to save code in db",
+            message: "Unable to send message",
             data: {},
           });
         }
-      } else {
-        res
-          .status(401)
-          .send({ status: false, message: "Unable to send message", data: {} });
-      }
-    }).catch(err =>{
-      console.log(err);
-      console.log("invalid number");
-      res.status(404).send({
-        status: false,
-        message: "Invalid Number",
-        data: {},
+      })
+      .catch((err) => {
+        console.log(err);
+        console.log("invalid number");
+        res.status(404).send({
+          status: false,
+          message: "Invalid Number",
+          data: {},
+        });
       });
-    });
-    
   } else {
     res.status(409).send({
       status: false,
       message: "User already register with same phone number or email",
+      data: {},
+    });
+  }
+});
+
+router.post("/sendBulkMessages", async (req, res) => {
+  console.log(" in send bulk messages");
+  console.log(req.body);
+  const user_data = await new Promise((resolve, reject) => {
+    UserModel.findOne(
+      { _id: req.body.admin_id, auth_key: req.body.auth_key },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
+      }
+    );
+  });
+  if (user_data && user_data.admin) {
+    const bindings = req.body.numbers.map((number) => {
+      return JSON.stringify({ binding_type: "sms", address: number });
+    });
+    service.notifications
+      .create({
+        toBinding: bindings,
+        body: req.body.message,
+      })
+      .then((notification) => {
+        console.log(notification);
+        console.log("Messages sent!");
+        res.status(200).send({
+          status: true,
+          message: "messages sent to all numbers",
+          data: notification,
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(401).send({
+          status: false,
+          message: "Invalid number found",
+          data: err,
+        });
+      });
+    /* Promise.all(
+      req.body.numbers.map((number) => {
+        return client.messages.create({
+          to: number,
+          from: process.env.TWILIO_MESSAGING_SERVICE_SID,
+          body: req.body.message,
+        });
+      })
+    )
+      .then((messages) => {
+        console.log("Messages sent!");
+        res.status(200).send({
+          status: true,
+          message: "messages sent to all numbers",
+          data: updated_user,
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(401).send({
+          status: false,
+          message: "Invalid number found",
+          data: err,
+        });
+      }); */
+  } else {
+    res.status(401).send({
+      status: false,
+      message: "Authentication failed",
+      data: {},
+    });
+  }
+});
+
+router.post("/sendMessagesToAllUsers", async (req, res) => {
+  console.log(" in send messages to all users");
+  console.log(req.body);
+  const user_data = await new Promise((resolve, reject) => {
+    UserModel.findOne(
+      { _id: req.body.admin_id, auth_key: req.body.auth_key },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
+      }
+    );
+  });
+  if (user_data && user_data.admin) {
+    var all_users = await new Promise((resolve, reject) => {
+      UserModel.find({ admin: false }, (error, users) => {
+        if (!err) {
+          resolve(users);
+        } else {
+          reject(error);
+        }
+      });
+    });
+    if (all_users) {
+      var numbers = [];
+      for (var i = 0; i < all_users.length; i++) {
+        numbers.push(all_users[i]["mobile_no"]);
+      }
+      const bindings = numbers.map((number) => {
+        return JSON.stringify({ binding_type: "sms", address: number });
+      });
+      service.notifications
+        .create({
+          toBinding: bindings,
+          body: req.body.message,
+        })
+        .then((notification) => {
+          console.log(notification);
+          console.log("Messages sent!");
+          res.status(200).send({
+            status: true,
+            message: "messages sent to all numbers",
+            data: notification,
+          });
+        })
+        .catch((err) => {
+          console.error(err);
+          res.status(401).send({
+            status: false,
+            message: "Invalid number found",
+            data: err,
+          });
+        });
+      /* Promise.all(
+        numbers.map((number) => {
+          return client.messages.create({
+            to: number,
+            from: process.env.TWILIO_MESSAGING_SERVICE_SID,
+            body: req.body.message,
+          });
+        })
+      )
+        .then((messages) => {
+          console.log("Messages sent!");
+          res.status(200).send({
+            status: true,
+            message: "messages sent to all numbers",
+            data: updated_user,
+          });
+        })
+        .catch((err) => {
+          console.error(err);
+          res.status(401).send({
+            status: false,
+            message: "Invalid number found",
+            data: err,
+          });
+        }); */
+    } else {
+      res.status(401).send({
+        status: false,
+        message: "Unable to get users",
+        data: {},
+      });
+    }
+  } else {
+    res.status(401).send({
+      status: false,
+      message: "Authentication failed",
       data: {},
     });
   }
@@ -698,19 +883,52 @@ router.delete("/deleteUser/:admin_id/:user_id/:auth_key", async (req, res) => {
   }
 });
 
-router.get("/test",async (req, res) => {
-  var num = "+9203009498431"
-  console.log("in test",num);
+router.get("/test", async (req, res) => {
+  UserModel.find({ admin: false }, (error, users) => {
+    if (!error) {
+      var numbers = [];
+      console.log(users[0]["mobile_no"]);
+      for (var i = 0; i < users.length; i++) {
+        numbers.push(users[i]["mobile_no"]);
+      }
+      res.send(numbers);
+    } else {
+      res.send(error);
+    }
+  });
+  /* var num = "+9203009498431";
+  console.log("in test", num);
   const test = await client.lookups
-    .phoneNumbers(num).fetch({ countryCode: "US" }).then((phone_number) => {
+    .phoneNumbers(num)
+    .fetch({ countryCode: "US" })
+    .then((phone_number) => {
       console.log(phone_number.phoneNumber);
       res.send(phone_number);
     })
     .catch((err) => {
       console.log(err);
       res.send(err);
-    });
+    }); */
 });
+
+async function validateNumber(number, res) {
+  validate_number = await new Promise((resolve, reject) => {
+    client.lookups
+      .phoneNumbers(number)
+      .fetch({ countryCode: "US" })
+      .then((phone_number) => {
+        console.log("in resolve");
+        console.log(phone_number.phoneNumber);
+        mobile_no = phone_number.phoneNumber;
+        resolve(phone_number);
+      })
+      .catch((err) => {
+        console.log("in reject");
+        console.log(err);
+        reject(err);
+      });
+  });
+}
 
 function generateRandomString() {
   var text = "";
