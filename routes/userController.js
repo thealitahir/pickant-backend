@@ -409,7 +409,7 @@ router.post("/sendMessagesToAllUsers", async (req, res) => {
   if (user_data && user_data.admin) {
     var all_users = await new Promise((resolve, reject) => {
       UserModel.find({ admin: false }, (error, users) => {
-        if (!err) {
+        if (!error) {
           resolve(users);
         } else {
           reject(error);
@@ -418,13 +418,61 @@ router.post("/sendMessagesToAllUsers", async (req, res) => {
     });
     if (all_users) {
       var numbers = [];
-      for (var i = 0; i < all_users.length; i++) {
-        numbers.push(all_users[i]["mobile_no"]);
+      invalid_numbers = [];
+      const bindings = [];
+      var i = 0;
+      all_users.map((user) => {
+        // console.log(user["mobile_no"]);
+        validateNumber(user["mobile_no"], (err, data) => {
+          i++;
+          if (!err && user) {
+            numbers.push(user["mobile_no"]);
+            bindings.push(
+              JSON.stringify({
+                binding_type: "sms",
+                address: user["mobile_no"],
+              })
+            );
+          } else if (user) {
+            invalid_numbers.push(user["mobile_no"]);
+          }
+          if (i == all_users.length) {
+            service.notifications
+              .create({
+                toBinding: bindings,
+                body: req.body.message,
+              })
+              .then((notification) => {
+                console.log(notification);
+                console.log("Messages sent!");
+                res.status(200).send({
+                  status: true,
+                  message: "messages sent to all numbers",
+                  data: { notification, invalid_numbers },
+                });
+              })
+              .catch((err) => {
+                console.error(err);
+                
+              });
+          }
+        });
+      });
+
+      /* for (var i = 0; i < all_users.length; i++) {
+        validateNumber(all_users[i]["mobile_no"], (err, data) => {
+          if (!err && all_users[i]) {
+            numbers.push(all_users[i]["mobile_no"]);
+          } else if(all_users[i]) {
+            invalid_numbers.push(all_users[i]["mobile_no"]);
+          }
+        });
       }
       const bindings = numbers.map((number) => {
         return JSON.stringify({ binding_type: "sms", address: number });
       });
-      service.notifications
+      res.send({bindings,numbers}); */
+      /* service.notifications
         .create({
           toBinding: bindings,
           body: req.body.message,
@@ -435,17 +483,17 @@ router.post("/sendMessagesToAllUsers", async (req, res) => {
           res.status(200).send({
             status: true,
             message: "messages sent to all numbers",
-            data: notification,
+            data: { notification, invalid_numbers },
           });
         })
         .catch((err) => {
           console.error(err);
-          res.status(401).send({
+           res.status(401).send({
             status: false,
             message: "Invalid number found",
             data: err,
           });
-        });
+        }); */
       /* Promise.all(
         numbers.map((number) => {
           return client.messages.create({
@@ -911,23 +959,17 @@ router.get("/test", async (req, res) => {
     }); */
 });
 
-async function validateNumber(number, res) {
-  validate_number = await new Promise((resolve, reject) => {
-    client.lookups
-      .phoneNumbers(number)
-      .fetch({ countryCode: "US" })
-      .then((phone_number) => {
-        console.log("in resolve");
-        console.log(phone_number.phoneNumber);
-        mobile_no = phone_number.phoneNumber;
-        resolve(phone_number);
-      })
-      .catch((err) => {
-        console.log("in reject");
-        console.log(err);
-        reject(err);
-      });
-  });
+function validateNumber(number, cb) {
+  client.lookups
+    .phoneNumbers(number)
+    .fetch({ countryCode: "US" })
+    .then((phone_number) => {
+      mobile_no = phone_number.phoneNumber;
+      cb(null, phone_number);
+    })
+    .catch((err) => {
+      cb(err, null);
+    });
 }
 
 function generateRandomString() {
