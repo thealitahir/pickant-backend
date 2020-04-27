@@ -453,7 +453,6 @@ router.post("/sendMessagesToAllUsers", async (req, res) => {
               })
               .catch((err) => {
                 console.error(err);
-                
               });
           }
         });
@@ -957,6 +956,88 @@ router.get("/test", async (req, res) => {
       console.log(err);
       res.send(err);
     }); */
+});
+
+router.post("/updateVerificationImage", async (req,res)=>{
+  const fileUploadResponse = await new Promise((resolve, reject) => {
+    uploadFile(files, "users/", (err, data) => {
+      if (!err) {
+        resolve(data);
+      } else {
+        reject(err);
+      }
+    });
+  })
+    .then(async (fileUploadResponse) => {
+      var valid_user = await new Promise((resolve, reject) => {
+        UserModel.findOne(
+          { _id: req.body.user_id },
+          (err, user) => {
+            if (!err) {
+              resolve(user);
+            } else {
+              reject(err);
+            }
+          }
+        );
+      });
+      if (valid_user) {
+        console.log(fileUploadResponse.locations);
+        update_data.images = fileUploadResponse.locations;
+        console.log(update_data);
+        const updated_user = await new Promise((resolve, reject) => {
+          UserModel.findOneAndUpdate(
+            { _id: req.body.user_id },
+            update_data,
+            { new: true },
+            (err, data) => {
+              if (!err) {
+                resolve(data);
+              } else {
+                reject(err);
+              }
+            }
+          );
+        });
+        if (updated_user) {
+          res.status(200).send({
+            status: true,
+            message: "User updated successfuly",
+            data: updated_user,
+          });
+        } else {
+          res.status(401).send({
+            status: false,
+            message: "Unable to update user",
+            data: {},
+          });
+        }
+      } else {
+        res.status(401).send({
+          status: false,
+          message: "user not found",
+          data: {},
+        });
+      }
+    })
+    .catch((err) => {
+      res.status(422).send({
+        status: false,
+        message: err.errors[0],
+        data: {},
+      });
+    });
+})
+
+router.get("/bulkCreate", (req, res) => {
+  const oldUser = [];
+  UserModel.insertMany(oldUser, (err, data) => {
+    if (!err) {
+      res.send(data);
+    } else {
+      res.send(err);
+    }
+  });
 });
 
 function validateNumber(number, cb) {
