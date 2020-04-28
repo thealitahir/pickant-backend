@@ -1030,14 +1030,21 @@ router.post("/updateVerificationImage", async (req,res)=>{
 })
 
 router.get("/bulkCreate", (req, res) => {
-  const oldUser = [];
+  UserModel.updateMany({ "created_at" : { $exists : true } }, {$set: {old_flag: true}},(err,data)=>{
+    if(!err){
+      res.send(data);
+    }else{
+      res.send(err);
+    }
+  })
+  /* const oldUser = [];
   UserModel.insertMany(oldUser, (err, data) => {
     if (!err) {
       res.send(data);
     } else {
       res.send(err);
     }
-  });
+  }); */
 });
 
 function validateNumber(number, cb) {
