@@ -1023,21 +1023,28 @@ router.post("/updateVerificationImage", async (req,res)=>{
     .catch((err) => {
       res.status(422).send({
         status: false,
-        message: err.errors[0],
+        message: err.errors,
         data: {},
       });
     });
 })
 
 router.get("/bulkCreate", (req, res) => {
-  const oldUser = [];
+  UserModel.updateMany({ "created_at" : { $exists : true } }, {$set: {old_flag: true}},(err,data)=>{
+    if(!err){
+      res.send(data);
+    }else{
+      res.send(err);
+    }
+  })
+  /* const oldUser = [];
   UserModel.insertMany(oldUser, (err, data) => {
     if (!err) {
       res.send(data);
     } else {
       res.send(err);
     }
-  });
+  }); */
 });
 
 function validateNumber(number, cb) {
