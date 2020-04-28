@@ -1023,7 +1023,7 @@ router.post("/updateVerificationImage", async (req,res)=>{
     .catch((err) => {
       res.status(422).send({
         status: false,
-        message: err.errors[0],
+        message: err.errors,
         data: {},
       });
     });
