@@ -26,7 +26,7 @@ var UserSchema = new Schema({
     subscription_end_date: { type: Schema.Types.Date },
   },
   old_flag: {type:Boolean, default:false},
-  created_at: { type: Date, default: Date.now },
+  created_at: { type: Date },
 });
 
 module.exports = mongoose.model("Users", UserSchema);
