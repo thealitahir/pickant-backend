@@ -958,7 +958,12 @@ router.get("/test", async (req, res) => {
     }); */
 });
 
-router.post("/updateVerificationImage", async (req,res)=>{
+router.post("/updateVerificationImage",multipleUpload, async (req,res)=>{
+  console.log("in updateVerificationImage");
+  const files = req.files;
+  console.log(req.body);
+  console.log(files.length);
+  var update_data = JSON.parse(req.body.update_data);
   const fileUploadResponse = await new Promise((resolve, reject) => {
     uploadFile(files, "users/", (err, data) => {
       if (!err) {
@@ -969,6 +974,7 @@ router.post("/updateVerificationImage", async (req,res)=>{
     });
   })
     .then(async (fileUploadResponse) => {
+      console.log("file uploaded >>>>>");
       var valid_user = await new Promise((resolve, reject) => {
         UserModel.findOne(
           { _id: req.body.user_id },
@@ -1021,6 +1027,7 @@ router.post("/updateVerificationImage", async (req,res)=>{
       }
     })
     .catch((err) => {
+      console.log(err.errors)
       res.status(422).send({
         status: false,
         message: err.errors,
