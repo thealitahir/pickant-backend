@@ -159,6 +159,7 @@ router.post("/register", multipleUpload, async (req, res) => {
     console.log("********************");
     console.log(newUser);
     newUser.email = newUser.email.toLowerCase();
+    newUser.created_at = Date.now;
     //create new user
     const new_user = await new Promise((resolve, reject) => {
       UserModel.findOneAndUpdate(
@@ -931,14 +932,14 @@ router.delete("/deleteUser/:admin_id/:user_id/:auth_key", async (req, res) => {
 });
 
 router.get("/test", async (req, res) => {
-  UserModel.find({ admin: false }, (error, users) => {
+  UserModel.find({ admin: true }, (error, users) => {
     if (!error) {
       var numbers = [];
-      console.log(users[0]["mobile_no"]);
-      for (var i = 0; i < users.length; i++) {
-        numbers.push(users[i]["mobile_no"]);
-      }
-      res.send(numbers);
+      // console.log(users[0]["mobile_no"]);
+      // for (var i = 0; i < users.length; i++) {
+      //   numbers.push(users[i]["mobile_no"]);
+      // }
+      res.send(users);
     } else {
       res.send(error);
     }
