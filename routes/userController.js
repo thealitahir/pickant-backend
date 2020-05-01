@@ -159,7 +159,7 @@ router.post("/register", multipleUpload, async (req, res) => {
     console.log("********************");
     console.log(newUser);
     newUser.email = newUser.email.toLowerCase();
-    newUser.created_at = Date.now;
+    newUser.created_at = Date.now();
     //create new user
     const new_user = await new Promise((resolve, reject) => {
       UserModel.findOneAndUpdate(
