@@ -35,7 +35,7 @@ router.get(
     // });
 
     // if (valid_user) {
-    SolutionModel.find({ user_role: req.params.role, status: "Pending" })
+    SolutionModel.find({ user_role: req.params.role, $or:[ {'status':'Pending'}, {'status':'Active'}, {'status':'Accepted'}, {'status':'InActive'} ] })
       .populate("user")
       .exec((err, data) => {
         if (!err) {
@@ -459,6 +459,95 @@ router.put("/solutionAccepted", async (req, res) => {
         {
           $set: {
             status: "Accepted",
+            accepted_by: ObjectID(solution.accepted_by),
+          },
+        },
+        { new: true }
+      )
+        .populate("user")
+        .exec((err, data) => {
+          if (!err) {
+            resolve(data);
+          } else {
+            reject(err);
+          }
+        });
+    });
+    if (updated_solution) {
+      console.log("Valid", valid_user);
+      const userAccepted = await new Promise((resolve, reject) => {
+        var new_price = solution.old_balance + solution.price;
+        UserModel.findOneAndUpdate(
+          { _id: solution.accepted_by },
+          {
+            $set: {
+              wallet: new_price,
+            },
+          },
+          { new: true },
+          (err, user) => {
+            if (!err) {
+              console.log(user);
+              client.messages
+                .create({
+                  body: `Pickant App: Your offer is accepted by ${user.firstName} You can contact your supplier through email:${user.email} or through mobile number : ${user.mobile_no} `,
+                  from: "(717) 415-5703",
+                  to: valid_user.mobile_no,
+                })
+                .then((message) => {
+                  resolve(message);
+                })
+                .catch((error) => {
+                  reject(error);
+                });
+            } else {
+              reject(error);
+            }
+          }
+        );
+      });
+      res.status(200).send({
+        status: true,
+        message: "Solution updated successfuly",
+        data: updated_solution,
+      });
+    } else {
+      res.status(409).send({
+        status: false,
+        message: "unable to update solution",
+        data: {},
+      });
+    }
+  } else {
+    res.status(401).send({
+      status: false,
+      message: "Authentication failed",
+      data: {},
+    });
+  }
+});
+
+//  API for updateSolutionStatus
+router.put("/updateSolutionStatus", async (req, res) => {
+  console.log("updateSolutionStatus", req.body);
+  const solution = req.body;
+  var valid_user = await new Promise((resolve, reject) => {
+    UserModel.findOne({ _id: solution.user_id }, (err, user) => {
+      if (!err) {
+        console.log("USER", user);
+        resolve(user);
+      } else {
+        reject(err);
+      }
+    });
+  });
+  if (valid_user) {
+    const updated_solution = await new Promise((resolve, reject) => {
+      SolutionModel.findOneAndUpdate(
+        { _id: solution.solution_id },
+        {
+          $set: {
+            status: `${solution.status}`,
             accepted_by: ObjectID(solution.accepted_by),
           },
         },
