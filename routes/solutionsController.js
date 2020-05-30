@@ -35,7 +35,7 @@ router.get(
     // });
 
     // if (valid_user) {
-    SolutionModel.find({ user_role: req.params.role, $not:[ {'status':'Pending'}, {'status':'Active'}, {'status':'Accepted'}, {'status':'InActive'} ] })
+    SolutionModel.find({ user_role: req.params.role, $or:[ {'status':'Pending'}, {'status':'Active'}, {'status':'Accepted'}, {'status':'InActive'} ] })
       .populate("user")
       .exec((err, data) => {
         if (!err) {
