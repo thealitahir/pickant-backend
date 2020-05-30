@@ -11,8 +11,14 @@ const subCategory = require('./routes/subCategoryController');
 const passport = require('passport');
 const cookieParser = require('cookie-parser');
 const fileRoute = require('./routes/fileUpload');
+const payment = require('./routes/payment');
+const notification = require('./routes/notificationController');
 require('dotenv').config();
-
+const ngrok = require('ngrok');
+(async function() {
+  const url = await ngrok.connect(3010);
+  console.log(url);
+})();
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -25,6 +31,8 @@ app.use('/solution',solution);
 app.use('/category',category);
 app.use('/subCategory',subCategory);
 app.use('/file', fileRoute);
+app.use('/payment', payment);
+app.use('/notify', notification);
 
 var opt = {
   useNewUrlParser: true
