@@ -538,6 +538,51 @@ router.put("/solutionAccepted", async (req, res) => {
   }
 });
 
+router.delete("/deleteSolution", async (req, res) => {
+  console.log("deleteSolution", req.body);
+  const solution = req.body;
+  var valid_user = await new Promise((resolve, reject) => {
+    UserModel.findOne({ _id: solution.user_id }, (err, user) => {
+      if (!err) {
+        console.log("USER", user);
+        resolve(user);
+      } else {
+        reject(err);
+      }
+    });
+  });
+  if (valid_user) {
+    const deleted_solution = await new Promise((resolve, reject) => {
+      SolutionModel.remove({ _id: solution.solution_id }, (err, data) => {
+        if (!err) {
+          resolve(data);
+        } else {
+          reject(err);
+        }
+      });
+    });
+    if (deleted_solution) {
+      res.status(200).send({
+        status: true,
+        message: "Solution deleted",
+        data: deleted_solution,
+      });
+    } else {
+      res.status(401).send({
+        status: true,
+        message: "Unable to update solution",
+        data: {},
+      });
+    }
+  } else {
+    res.status(401).send({
+      status: false,
+      message: "Authentication failed",
+      data: {},
+    });
+  }
+});
+
 //  API for updateSolutionStatus
 router.put("/updateSolutionStatus", async (req, res) => {
   console.log("updateSolutionStatus", req.body);
@@ -573,6 +618,19 @@ router.put("/updateSolutionStatus", async (req, res) => {
           }
         });
     });
+    if (updated_solution) {
+      res.status(200).send({
+        status: true,
+        message: "Solution updated",
+        data: updated_solution,
+      });
+    } else {
+      res.status(401).send({
+        status: true,
+        message: "Unable to update solution",
+        data: {},
+      });
+    }
   } else {
     res.status(401).send({
       status: false,
