@@ -159,7 +159,7 @@ router.post("/register", multipleUpload, async (req, res) => {
     console.log("********************");
     console.log(newUser);
     newUser.email = newUser.email.toLowerCase();
-    newUser.created_at = Date.now;
+    newUser.created_at = Date.now();
     //create new user
     const new_user = await new Promise((resolve, reject) => {
       UserModel.findOneAndUpdate(
@@ -932,7 +932,41 @@ router.delete("/deleteUser/:admin_id/:user_id/:auth_key", async (req, res) => {
 });
 
 router.get("/test", async (req, res) => {
-  UserModel.find({ admin: true }, (error, users) => {
+  var numbers = ["+923009498431"];
+  var message = "hello from the other side";
+  const client2 = require("twilio")(
+    "ACa0ffacadbcf88c4dcc6c4fbf17df3e17",
+    "7974983cf56ddfde1e0d573caafa89dd"
+  );
+  const service2 = client2.notify.services(
+    "ISe6e3c803300f2527cc0baa9410f4b7b4"
+  );
+  const bindings = numbers.map((number) => {
+    return JSON.stringify({ binding_type: "sms", address: number });
+  });
+  service2.notifications
+    .create({
+      toBinding: bindings,
+      body: message,
+    })
+    .then((notification) => {
+      console.log(notification);
+      console.log("Messages sent!");
+      res.status(200).send({
+        status: true,
+        message: "messages sent to all numbers",
+        data: notification,
+      });
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(401).send({
+        status: false,
+        message: "Invalid number found",
+        data: err,
+      });
+    });
+  /* UserModel.find({ admin: true }, (error, users) => {
     if (!error) {
       var numbers = [];
       // console.log(users[0]["mobile_no"]);
@@ -943,7 +977,7 @@ router.get("/test", async (req, res) => {
     } else {
       res.send(error);
     }
-  });
+  }); */
   /* var num = "+9203009498431";
   console.log("in test", num);
   const test = await client.lookups
@@ -957,6 +991,7 @@ router.get("/test", async (req, res) => {
       console.log(err);
       res.send(err);
     }); */
+
 });
 
 router.post("/updateVerificationImage",multipleUpload, async (req,res)=>{
