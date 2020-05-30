@@ -41,7 +41,7 @@ router.get(
         if (!err) {
           res.status(200).send({
             status: true,
-            message: "solutions found",
+           // message: "solutions found",
             data: data,
           });
         } else {
