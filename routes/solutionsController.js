@@ -562,51 +562,6 @@ router.put("/updateSolutionStatus", async (req, res) => {
           }
         });
     });
-    if (updated_solution) {
-      console.log("Valid", valid_user);
-      const userAccepted = await new Promise((resolve, reject) => {
-        var new_price = solution.old_balance + solution.price;
-        UserModel.findOneAndUpdate(
-          { _id: solution.accepted_by },
-          {
-            $set: {
-              wallet: new_price,
-            },
-          },
-          { new: true },
-          (err, user) => {
-            if (!err) {
-              console.log(user);
-              client.messages
-                .create({
-                  body: `Pickant App: Your offer is accepted by ${user.firstName} You can contact your supplier through email:${user.email} or through mobile number : ${user.mobile_no} `,
-                  from: "(717) 415-5703",
-                  to: valid_user.mobile_no,
-                })
-                .then((message) => {
-                  resolve(message);
-                })
-                .catch((error) => {
-                  reject(error);
-                });
-            } else {
-              reject(error);
-            }
-          }
-        );
-      });
-      res.status(200).send({
-        status: true,
-        message: "Solution updated successfuly",
-        data: updated_solution,
-      });
-    } else {
-      res.status(409).send({
-        status: false,
-        message: "unable to update solution",
-        data: {},
-      });
-    }
   } else {
     res.status(401).send({
       status: false,
