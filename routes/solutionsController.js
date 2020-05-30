@@ -35,7 +35,7 @@ router.get(
     // });
 
     // if (valid_user) {
-    SolutionModel.find({ user_role: req.params.role, status: "Pending" })
+    SolutionModel.find({ user_role: req.params.role, $or:[ {'status':'Pending'}, {'status':'Active'}, {'status':'Accepted'}, {'status':'InActive'} ] })
       .populate("user")
       .exec((err, data) => {
         if (!err) {
@@ -518,6 +518,50 @@ router.put("/solutionAccepted", async (req, res) => {
         data: {},
       });
     }
+  } else {
+    res.status(401).send({
+      status: false,
+      message: "Authentication failed",
+      data: {},
+    });
+  }
+});
+
+//  API for updateSolutionStatus
+router.put("/updateSolutionStatus", async (req, res) => {
+  console.log("updateSolutionStatus", req.body);
+  const solution = req.body;
+  var valid_user = await new Promise((resolve, reject) => {
+    UserModel.findOne({ _id: solution.user_id }, (err, user) => {
+      if (!err) {
+        console.log("USER", user);
+        resolve(user);
+      } else {
+        reject(err);
+      }
+    });
+  });
+  if (valid_user) {
+    const updated_solution = await new Promise((resolve, reject) => {
+      SolutionModel.findOneAndUpdate(
+        { _id: solution.solution_id },
+        {
+          $set: {
+            status: `${solution.status}`,
+            accepted_by: ObjectID(solution.accepted_by),
+          },
+        },
+        { new: true }
+      )
+        .populate("user")
+        .exec((err, data) => {
+          if (!err) {
+            resolve(data);
+          } else {
+            reject(err);
+          }
+        });
+    });
   } else {
     res.status(401).send({
       status: false,
