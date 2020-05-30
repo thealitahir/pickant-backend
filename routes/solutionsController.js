@@ -35,7 +35,14 @@ router.get(
     // });
 
     // if (valid_user) {
-    SolutionModel.find({ user_role: req.params.role, $or:[ {'status':'Pending'}, {'status':'Active'}, {'status':'Accepted'}, {'status':'InActive'} ] })
+    SolutionModel.find({
+      user_role: req.params.role,
+      $or: [
+        { status: "Pending" },
+        { status: "Active" },
+        { status: "Accepted" },
+      ],
+    })
       .populate("user")
       .exec((err, data) => {
         if (!err) {
@@ -170,7 +177,12 @@ router.get(
     if (valid_user) {
       SolutionModel.findOne({
         _id: req.params.solution_id,
-        status: "Accepted",
+        $or: [
+          { status: "Pending" },
+          { status: "Active" },
+          { status: "Accepted" },
+          { status: "InActive" },
+        ],
       })
         .populate("user")
         .populate("accepted_by")
@@ -328,7 +340,6 @@ router.get(
         }
       });
     });
-
   }
 );
 
@@ -490,7 +501,7 @@ router.put("/solutionAccepted", async (req, res) => {
               console.log(user);
               client.messages
                 .create({
-                  body: `Pickant App: Your offer is accepted by ${user.firstName} You can contact your supplier through email:${user.email} or through mobile number : ${user.mobile_no} `,
+                  body: `Pickant: Offer accepted by ${user.firstName}. Call : ${user.mobile_no} Email:${user.email}`,
                   from: "(717) 415-5703",
                   to: valid_user.mobile_no,
                 })
