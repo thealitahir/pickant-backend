@@ -6,10 +6,6 @@
   "scripts": {
     "start": "node server.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "nodeApp"
-  },
   "author": "",
   "license": "ISC",
   "dependencies": {
