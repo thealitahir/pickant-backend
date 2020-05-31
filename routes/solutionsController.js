@@ -71,7 +71,7 @@ router.get(
 );
 
 router.get(
-  "/getSolutionDetails/:user_id/:auth_key/:solution_id/:role",
+  "/getSolutionDetails/:user_id/:solution_id/:role",
   async (req, res) => {
     console.log("in get solution details");
     var valid_user = await new Promise((resolve, reject) => {
