@@ -538,11 +538,11 @@ router.put("/solutionAccepted", async (req, res) => {
   }
 });
 
-router.delete("/deleteSolution", async (req, res) => {
+router.delete("/deleteSolution/:user_id/:solution_id", async (req, res) => {
   console.log("deleteSolution", req.body);
   const solution = req.body;
   var valid_user = await new Promise((resolve, reject) => {
-    UserModel.findOne({ _id: solution.user_id }, (err, user) => {
+    UserModel.findOne({ _id: req.params.user_id }, (err, user) => {
       if (!err) {
         console.log("USER", user);
         resolve(user);
@@ -553,7 +553,7 @@ router.delete("/deleteSolution", async (req, res) => {
   });
   if (valid_user) {
     const deleted_solution = await new Promise((resolve, reject) => {
-      SolutionModel.remove({ _id: solution.solution_id }, (err, data) => {
+      SolutionModel.remove({ _id: req.params.solution_id }, (err, data) => {
         if (!err) {
           resolve(data);
         } else {
