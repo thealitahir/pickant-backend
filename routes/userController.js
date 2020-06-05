@@ -1073,21 +1073,144 @@ router.post("/updateVerificationImage",multipleUpload, async (req,res)=>{
 })
 
 router.get("/bulkCreate", (req, res) => {
-  UserModel.updateMany({ "created_at" : { $exists : true } }, {$set: {old_flag: true}},(err,data)=>{
+  /* UserModel.updateMany({ "created_at" : { $exists : true } }, {$set: {old_flag: true}},(err,data)=>{
     if(!err){
       res.send(data);
     }else{
       res.send(err);
     }
-  })
-  /* const oldUser = [];
+  }) */
+  const oldUser = [
+    {
+      "firstName": "fallou",
+      "lastName" : "",
+      "email": "falloudiagne690@yahoo.com",
+      "mobile_no": "+221776143042",
+      "password": "123123",
+        "admin": false,
+        "identity_flag": false,
+        "verified": false,
+        "old_flag": true
+    }, {
+      "firstName": "Bassirou",
+      "lastName" : "Diémé",
+      "email": "bassedieme251085@yahoo.com",
+      "mobile_no": "+221772153677",
+      "password": "123123",
+        "admin": false,
+        "identity_flag": false,
+        "verified": false,
+        "old_flag": true
+    }, {
+      "firstName": "cheikh",
+      "lastName" : "",
+      "email": "kheuchdi8089@gmail.com",
+      "mobile_no": "+221770951212",
+      "password": "123123",
+        "admin": false,
+        "identity_flag": false,
+        "verified": false,
+        "old_flag": true
+    }, {
+      "firstName": "francois",
+      "lastName" : "",
+      "email": "adsaffairsen@outlook.com",
+      "mobile_no": "+221771376310",
+      "password": "123123",
+        "admin": false,
+        "identity_flag": false,
+        "verified": false,
+        "old_flag": true
+    }, {
+      "firstName": "Mariama",
+      "lastName" : "",
+      "email": "baldemariama972@gmail.com",
+      "password": "123123",
+      "mobile_no": "+221775389923",
+        "admin": false,
+        "identity_flag": false,
+        "verified": false,
+        "old_flag": true
+    }, {
+      "firstName": "Mamadou moctar cisse",
+      "lastName" : "",
+      "email": "cmatar576@gmail.com",
+      "mobile_no": "+221774593839",
+      "password": "123123",
+        "admin": false,
+        "identity_flag": false,
+        "verified": false,
+        "old_flag": true
+    }, {
+      "firstName": "aboubacrine",
+      "lastName" : "",
+      "email": "aboubacrinediouf844@gmail.com",
+      "mobile_no": "+221785558570",
+      "password": "123123",
+        "admin": false,
+        "identity_flag": false,
+        "verified": false,
+        "old_flag": true
+    },
+    {
+      "firstName": "Francois",
+      "lastName" : "Corea",
+      "email": "francoiscorea22@gmail.com",
+      "password": "123123",
+      "mobile_no": "+221777076470",
+        "admin": false,
+        "identity_flag": false,
+        "verified": false,
+        "old_flag": true
+    }, {
+      "firstName": "Francois",
+      "lastName" : "Corea",
+      "email": "francoiscorea@gmail.com",
+      "password": "123123",
+      "mobile_no": "+221762084274",
+        "admin": false,
+        "identity_flag": false,
+        "verified": false,
+        "old_flag": true
+    }, {
+      "firstName": "Andy",
+      "lastName" : "souza",
+      "email": "souzandy19@gmail.com",
+      "password": "123123",
+      "mobile_no": "+221773928507",
+        "admin": false,
+        "identity_flag": false,
+        "verified": false,
+        "old_flag": true
+    }, {
+      "firstName": "djiby",
+      "lastName" : "",
+      "email": "djiby.so19@gmail.com",
+      "password": "123123",
+      "mobile_no": "221779222444",
+        "admin": false,
+        "identity_flag": false,
+        "verified": false,
+        "old_flag": true
+    }, {
+      "firstName": "Ibrahima",
+      "lastName" : "Diallo",
+      "email": "ibrahimadiallopellaltoul100@gmail.com",
+      "password": "123123",
+      "mobile_no": "+221761938988",
+        "admin": false,
+        "identity_flag": false,
+        "verified": false,
+        "old_flag": true
+    }
+  ];
   UserModel.insertMany(oldUser, (err, data) => {
     if (!err) {
       res.send(data);
     } else {
       res.send(err);
     }
-  }); */
+  });
 });
 
 function validateNumber(number, cb) {

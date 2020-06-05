@@ -211,6 +211,47 @@ router.get(
   }
 );
 
+router.get("/getUserAcceptedSolutions/:user_id/:auth_key", async (req, res) => {
+  console.log("in get User Accepted Solutions");
+  var valid_user = await new Promise((resolve, reject) => {
+    UserModel.findOne(
+      { _id: req.params.user_id, auth_key: req.params.auth_key },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
+      }
+    );
+  });
+  if (valid_user) {
+    SolutionModel.find({ accepted_by: req.params.user_id })
+      .populate("user")
+      .exec((err, data) => {
+        if (!err) {
+          res.status(200).send({
+            status: true,
+            message: "solutions found",
+            data: data,
+          });
+        } else {
+          res.status(400).send({
+            status: false,
+            message: "unable to find solutions",
+            data: {},
+          });
+        }
+      });
+  } else {
+    res.status(401).send({
+      status: false,
+      message: "Authentication failed",
+      data: {},
+    });
+  }
+});
+
 router.get(
   "/searchSolution/:user_id/:auth_key/:solutionType/:searchBy/:searchString",
   async (req, res) => {
@@ -342,6 +383,54 @@ router.get(
     });
   }
 );
+
+router.put("/rejectSolution", async (req, res) => {
+  console.log("in reject Solution");
+  var valid_user = await new Promise((resolve, reject) => {
+    UserModel.findOne(
+      { _id: req.body.user_id, auth_key: req.body.auth_key },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
+      }
+    );
+  });
+  if (valid_user) {
+    SolutionModel.findOneAndUpdate(
+      { accepted_by: req.body.user_id },
+      {
+        $set: {
+          accepted_by: "",
+        },
+      },
+      { new: true },
+      (err, solution) => {
+        if (!err) {
+          res.status(200).send({
+            status: true,
+            message: "Solution updated successfuly",
+            data: solution,
+          });
+        } else {
+          res.status(409).send({
+            status: false,
+            message: "unable to update solution",
+            data: {},
+          });
+        }
+      }
+    );
+  } else {
+    res.status(401).send({
+      status: false,
+      message: "Authentication failed",
+      data: {},
+    });
+  }
+});
 
 router.post("/addSolution", multipleUpload, async (req, res) => {
   console.log("in add solution");
