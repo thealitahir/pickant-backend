@@ -400,7 +400,7 @@ router.put("/rejectSolution", async (req, res) => {
   });
   if (valid_user) {
     SolutionModel.findOneAndUpdate(
-      { accepted_by: req.body.user_id },
+      { _id: req.body.solution_id },
       {
         $set: {
           accepted_by: "",
