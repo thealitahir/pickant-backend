@@ -403,7 +403,7 @@ router.put("/rejectSolution", async (req, res) => {
       { _id: req.body.solution_id },
       {
         $set: {
-          accepted_by: "",
+          accepted_by: null
         },
       },
       { new: true },
