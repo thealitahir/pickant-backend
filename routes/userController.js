@@ -125,70 +125,79 @@ router.post("/register", multipleUpload, async (req, res) => {
       .status(409)
       .send({ status: false, message: "User already exists", data: {} });
   } else {
-    console.log("creating new user");
-    if (newUser.identity_flag) {
-      const fileUploadResponse = await new Promise((resolve, reject) => {
-        uploadFile(files, "users/", (err, data) => {
-          if (!err) {
-            resolve(data);
-          } else {
-            reject(err);
-          }
-        });
-      })
-        .then(async (fileUploadResponse) => {
-          newUser.images = fileUploadResponse.locations;
-        })
-        .catch((err) => {
-          res.status(422).send({
-            status: false,
-            message: err.errors[0],
-            data: {},
-          });
-        });
-    }
-
-    /* newUser.firstName = req.body.firstName;
-    newUser.lastName = req.body.lastName;
-    newUser.email = req.body.email;
-    newUser.password = req.body.password;
-    newUser.mobile_no = req.body.mobile_no;
-    newUser.physical_address = req.body.physical_address;
-    newUser.admin = req.body.admin;
-    newUser.identity_flag = req.body.identity_flag; */
-    console.log("********************");
-    console.log(newUser);
-    newUser.email = newUser.email.toLowerCase();
-    newUser.created_at = Date.now();
-    //create new user
-    const new_user = await new Promise((resolve, reject) => {
-      UserModel.findOneAndUpdate(
-        { mobile_no: newUser.mobile_no },
-        newUser,
-        { upsert: true, new: true },
-        (err, new_user) => {
-          if (!err) {
-            resolve(new_user);
-          } else {
-            reject(err);
-          }
+    validateNumber(newUser.mobile_no, async (error, validate_number) => {
+      if (!error) {
+        console.log("creating new user");
+        if (newUser.identity_flag) {
+          const fileUploadResponse = await new Promise((resolve, reject) => {
+            uploadFile(files, "users/", (err, data) => {
+              if (!err) {
+                resolve(data);
+              } else {
+                reject(err);
+              }
+            });
+          })
+            .then(async (fileUploadResponse) => {
+              newUser.images = fileUploadResponse.locations;
+            })
+            .catch((err) => {
+              res.status(422).send({
+                status: false,
+                message: err.errors[0],
+                data: {},
+              });
+            });
         }
-      );
-    })
-      .then((new_user) => {
-        res.status(200).send({
-          status: true,
-          message: "User registered successfully",
-          data: new_user,
-        });
-      })
-      .catch((err) => {
-        res.status(401).send({
-          status: false,
-          message: "Unable to register user",
-          data: err,
-        });
-      });
+
+        /* newUser.firstName = req.body.firstName;
+        newUser.lastName = req.body.lastName;
+        newUser.email = req.body.email;
+        newUser.password = req.body.password;
+        newUser.mobile_no = req.body.mobile_no;
+        newUser.physical_address = req.body.physical_address;
+        newUser.admin = req.body.admin;
+        newUser.identity_flag = req.body.identity_flag; */
+        console.log("********************");
+        console.log(newUser);
+        newUser.email = newUser.email.toLowerCase();
+        newUser.created_at = Date.now();
+        //create new user
+        const new_user = await new Promise((resolve, reject) => {
+          UserModel.findOneAndUpdate(
+            { mobile_no: newUser.mobile_no },
+            newUser,
+            { upsert: true, new: true },
+            (err, new_user) => {
+              if (!err) {
+                resolve(new_user);
+              } else {
+                reject(err);
+              }
+            }
+          );
+        })
+          .then((new_user) => {
+            res.status(200).send({
+              status: true,
+              message: "User registered successfully",
+              data: new_user,
+            });
+          })
+          .catch((err) => {
+            res.status(401).send({
+              status: false,
+              message: "Unable to register user",
+              data: err,
+            });
+          });
+      } else {
+        res
+          .status(401)
+          .send({ status: false, message: "Number not valid", data: {} });
+      }
+    });
+    
   }
 });
 
@@ -991,10 +1000,9 @@ router.get("/test", async (req, res) => {
       console.log(err);
       res.send(err);
     }); */
-
 });
 
-router.post("/updateVerificationImage",multipleUpload, async (req,res)=>{
+router.post("/updateVerificationImage", multipleUpload, async (req, res) => {
   console.log("in updateVerificationImage");
   const files = req.files;
   console.log(req.body);
@@ -1012,16 +1020,13 @@ router.post("/updateVerificationImage",multipleUpload, async (req,res)=>{
     .then(async (fileUploadResponse) => {
       console.log("file uploaded >>>>>");
       var valid_user = await new Promise((resolve, reject) => {
-        UserModel.findOne(
-          { _id: req.body.user_id },
-          (err, user) => {
-            if (!err) {
-              resolve(user);
-            } else {
-              reject(err);
-            }
+        UserModel.findOne({ _id: req.body.user_id }, (err, user) => {
+          if (!err) {
+            resolve(user);
+          } else {
+            reject(err);
           }
-        );
+        });
       });
       if (valid_user) {
         console.log(fileUploadResponse.locations);
@@ -1063,14 +1068,14 @@ router.post("/updateVerificationImage",multipleUpload, async (req,res)=>{
       }
     })
     .catch((err) => {
-      console.log(err.errors)
+      console.log(err.errors);
       res.status(422).send({
         status: false,
         message: err.errors,
         data: {},
       });
     });
-})
+});
 
 router.get("/bulkCreate", (req, res) => {
   /* UserModel.updateMany({ "created_at" : { $exists : true } }, {$set: {old_flag: true}},(err,data)=>{
@@ -1082,127 +1087,137 @@ router.get("/bulkCreate", (req, res) => {
   }) */
   const oldUser = [
     {
-      "firstName": "fallou",
-      "lastName" : "",
-      "email": "falloudiagne690@yahoo.com",
-      "mobile_no": "+221776143042",
-      "password": "123123",
-        "admin": false,
-        "identity_flag": false,
-        "verified": false,
-        "old_flag": true
-    }, {
-      "firstName": "Bassirou",
-      "lastName" : "Diémé",
-      "email": "bassedieme251085@yahoo.com",
-      "mobile_no": "+221772153677",
-      "password": "123123",
-        "admin": false,
-        "identity_flag": false,
-        "verified": false,
-        "old_flag": true
-    }, {
-      "firstName": "cheikh",
-      "lastName" : "",
-      "email": "kheuchdi8089@gmail.com",
-      "mobile_no": "+221770951212",
-      "password": "123123",
-        "admin": false,
-        "identity_flag": false,
-        "verified": false,
-        "old_flag": true
-    }, {
-      "firstName": "francois",
-      "lastName" : "",
-      "email": "adsaffairsen@outlook.com",
-      "mobile_no": "+221771376310",
-      "password": "123123",
-        "admin": false,
-        "identity_flag": false,
-        "verified": false,
-        "old_flag": true
-    }, {
-      "firstName": "Mariama",
-      "lastName" : "",
-      "email": "baldemariama972@gmail.com",
-      "password": "123123",
-      "mobile_no": "+221775389923",
-        "admin": false,
-        "identity_flag": false,
-        "verified": false,
-        "old_flag": true
-    }, {
-      "firstName": "Mamadou moctar cisse",
-      "lastName" : "",
-      "email": "cmatar576@gmail.com",
-      "mobile_no": "+221774593839",
-      "password": "123123",
-        "admin": false,
-        "identity_flag": false,
-        "verified": false,
-        "old_flag": true
-    }, {
-      "firstName": "aboubacrine",
-      "lastName" : "",
-      "email": "aboubacrinediouf844@gmail.com",
-      "mobile_no": "+221785558570",
-      "password": "123123",
-        "admin": false,
-        "identity_flag": false,
-        "verified": false,
-        "old_flag": true
+      firstName: "fallou",
+      lastName: "",
+      email: "falloudiagne690@yahoo.com",
+      mobile_no: "+221776143042",
+      password: "123123",
+      admin: false,
+      identity_flag: false,
+      verified: false,
+      old_flag: true,
     },
     {
-      "firstName": "Francois",
-      "lastName" : "Corea",
-      "email": "francoiscorea22@gmail.com",
-      "password": "123123",
-      "mobile_no": "+221777076470",
-        "admin": false,
-        "identity_flag": false,
-        "verified": false,
-        "old_flag": true
-    }, {
-      "firstName": "Francois",
-      "lastName" : "Corea",
-      "email": "francoiscorea@gmail.com",
-      "password": "123123",
-      "mobile_no": "+221762084274",
-        "admin": false,
-        "identity_flag": false,
-        "verified": false,
-        "old_flag": true
-    }, {
-      "firstName": "Andy",
-      "lastName" : "souza",
-      "email": "souzandy19@gmail.com",
-      "password": "123123",
-      "mobile_no": "+221773928507",
-        "admin": false,
-        "identity_flag": false,
-        "verified": false,
-        "old_flag": true
-    }, {
-      "firstName": "djiby",
-      "lastName" : "",
-      "email": "djiby.so19@gmail.com",
-      "password": "123123",
-      "mobile_no": "221779222444",
-        "admin": false,
-        "identity_flag": false,
-        "verified": false,
-        "old_flag": true
-    }, {
-      "firstName": "Ibrahima",
-      "lastName" : "Diallo",
-      "email": "ibrahimadiallopellaltoul100@gmail.com",
-      "password": "123123",
-      "mobile_no": "+221761938988",
-        "admin": false,
-        "identity_flag": false,
-        "verified": false,
-        "old_flag": true
-    }
+      firstName: "Bassirou",
+      lastName: "Diémé",
+      email: "bassedieme251085@yahoo.com",
+      mobile_no: "+221772153677",
+      password: "123123",
+      admin: false,
+      identity_flag: false,
+      verified: false,
+      old_flag: true,
+    },
+    {
+      firstName: "cheikh",
+      lastName: "",
+      email: "kheuchdi8089@gmail.com",
+      mobile_no: "+221770951212",
+      password: "123123",
+      admin: false,
+      identity_flag: false,
+      verified: false,
+      old_flag: true,
+    },
+    {
+      firstName: "francois",
+      lastName: "",
+      email: "adsaffairsen@outlook.com",
+      mobile_no: "+221771376310",
+      password: "123123",
+      admin: false,
+      identity_flag: false,
+      verified: false,
+      old_flag: true,
+    },
+    {
+      firstName: "Mariama",
+      lastName: "",
+      email: "baldemariama972@gmail.com",
+      password: "123123",
+      mobile_no: "+221775389923",
+      admin: false,
+      identity_flag: false,
+      verified: false,
+      old_flag: true,
+    },
+    {
+      firstName: "Mamadou moctar cisse",
+      lastName: "",
+      email: "cmatar576@gmail.com",
+      mobile_no: "+221774593839",
+      password: "123123",
+      admin: false,
+      identity_flag: false,
+      verified: false,
+      old_flag: true,
+    },
+    {
+      firstName: "aboubacrine",
+      lastName: "",
+      email: "aboubacrinediouf844@gmail.com",
+      mobile_no: "+221785558570",
+      password: "123123",
+      admin: false,
+      identity_flag: false,
+      verified: false,
+      old_flag: true,
+    },
+    {
+      firstName: "Francois",
+      lastName: "Corea",
+      email: "francoiscorea22@gmail.com",
+      password: "123123",
+      mobile_no: "+221777076470",
+      admin: false,
+      identity_flag: false,
+      verified: false,
+      old_flag: true,
+    },
+    {
+      firstName: "Francois",
+      lastName: "Corea",
+      email: "francoiscorea@gmail.com",
+      password: "123123",
+      mobile_no: "+221762084274",
+      admin: false,
+      identity_flag: false,
+      verified: false,
+      old_flag: true,
+    },
+    {
+      firstName: "Andy",
+      lastName: "souza",
+      email: "souzandy19@gmail.com",
+      password: "123123",
+      mobile_no: "+221773928507",
+      admin: false,
+      identity_flag: false,
+      verified: false,
+      old_flag: true,
+    },
+    {
+      firstName: "djiby",
+      lastName: "",
+      email: "djiby.so19@gmail.com",
+      password: "123123",
+      mobile_no: "221779222444",
+      admin: false,
+      identity_flag: false,
+      verified: false,
+      old_flag: true,
+    },
+    {
+      firstName: "Ibrahima",
+      lastName: "Diallo",
+      email: "ibrahimadiallopellaltoul100@gmail.com",
+      password: "123123",
+      mobile_no: "+221761938988",
+      admin: false,
+      identity_flag: false,
+      verified: false,
+      old_flag: true,
+    },
   ];
   UserModel.insertMany(oldUser, (err, data) => {
     if (!err) {

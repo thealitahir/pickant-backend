@@ -230,6 +230,7 @@ router.get("/getUserAcceptedSolutions/:user_id/:auth_key", async (req, res) => {
       .populate("user")
       .exec((err, data) => {
         if (!err) {
+          console.log(data);
           res.status(200).send({
             status: true,
             message: "solutions found",
