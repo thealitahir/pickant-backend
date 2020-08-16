@@ -35,7 +35,8 @@ app.use('/payment', payment);
 app.use('/notify', notification);
 
 var opt = {
-  useNewUrlParser: true
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 };
 mongoose.connect(
   process.env.CONNECTION_STRING,
