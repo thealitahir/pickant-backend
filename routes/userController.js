@@ -884,9 +884,11 @@ router.get(
   "/getUsers/:admin_id/:auth_key/:search_type/:searchString",
   async (req, res) => {
     console.log("in get users");
+    console.log(req.params.admin_id);
+    console.log(req.params.auth_key);
     const user_data = await new Promise((resolve, reject) => {
       UserModel.findOne(
-        { _id: req.params.user_id, auth_key: req.params.auth_key },
+        { _id: req.params.admin_id, auth_key: req.params.auth_key },
         (err, user) => {
           if (!err) {
             resolve(user);
@@ -1020,7 +1022,7 @@ router.delete("/deleteUser/:admin_id/:user_id/:auth_key", async (req, res) => {
 });
 
 router.put(
-  "/updateUserSubscription/:admin_id/:auth_key/:user_id",
+  "/updateUserSubscription/:admin_id/:auth_key/:user_id/:subscription",
   async (req, res) => {
     const user_data = await new Promise((resolve, reject) => {
       UserModel.findOne(
@@ -1034,22 +1036,36 @@ router.put(
         }
       );
     });
+    var set = {};
     if (user_data) {
-      var current_date = new Date();
-      var year = current_date.getFullYear();
-      var month = current_date.getMonth();
-      var day = current_date.getDate();
-      var end_date = new Date(year + 1, month, day);
-      UserModel.findOneAndUpdate(
-        { _id: req.params.user_id },
-        {
+      if (req.params.subscription) {
+        var current_date = new Date();
+        var year = current_date.getFullYear();
+        var month = current_date.getMonth();
+        var day = current_date.getDate();
+        var end_date = new Date(year + 1, month, day);
+        set = {
           $set: {
-            "subscription.subscription_flag": true,
+            "subscription.subscription_flag": req.params.subscription,
             "subscription.subscription_type": "yearly payment",
             "subscription.subscription_start_date": current_date,
             "subscription.subscription_end_date": end_date,
           },
-        },
+        };
+      } else {
+        set = {
+          $set: {
+            "subscription.subscription_flag": req.params.subscription,
+            "subscription.subscription_type": "",
+            "subscription.subscription_start_date": null,
+            "subscription.subscription_end_date": null,
+          },
+        };
+      }
+
+      UserModel.findOneAndUpdate(
+        { _id: req.params.user_id },
+        set,
         { new: true },
         (err, user) => {
           if (!err) {
