@@ -192,12 +192,13 @@ router.post("/register", multipleUpload, async (req, res) => {
             });
           });
       } else {
-        res
-          .status(401)
-          .send({ status: false, message: "Number not valid", data: {} });
+        res.status(401).send({
+          status: false,
+          message: "Number not valid",
+          data: {},
+        });
       }
     });
-    
   }
 });
 
@@ -879,6 +880,86 @@ router.get("/getAllUsers", async (req, res) => {
   // }
 });
 
+router.get(
+  "/getUsers/:admin_id/:auth_key/:search_type/:searchString",
+  async (req, res) => {
+    console.log("in get users");
+    console.log(req.params.admin_id);
+    console.log(req.params.auth_key);
+    const user_data = await new Promise((resolve, reject) => {
+      UserModel.findOne(
+        { _id: req.params.admin_id, auth_key: req.params.auth_key },
+        (err, user) => {
+          if (!err) {
+            resolve(user);
+          } else {
+            reject(err);
+          }
+        }
+      );
+    });
+    if (user_data) {
+      var query = {};
+      if (req.params.search_type === "mobile") {
+        var mobile_no = "";
+        if (req.params.searchString[0] == "+") {
+          mobile_no = req.params.searchString.substr(1);
+        } else {
+          mobile_no = req.params.searchString;
+        }
+        query = {
+          mobile_no: {
+            $regex: new RegExp(mobile_no, "i"),
+          },
+        };
+      } else if (req.params.search_type === "name") {
+        query = {
+          $or: [
+            {
+              firstName: {
+                $regex: new RegExp("^" + req.params.searchString, "i"),
+              },
+            },
+            {
+              lastName: {
+                $regex: new RegExp("^" + req.params.searchString, "i"),
+              },
+            },
+          ],
+        };
+      } else if (req.params.search_type === "email") {
+        query = {
+          email: {
+            $regex: new RegExp("^" + req.params.searchString, "i"),
+          },
+        };
+      }
+      console.log(query);
+      UserModel.find(query, (err, users) => {
+        if (!err) {
+          res.status(200).send({
+            status: true,
+            message: "users fetched",
+            data: users,
+          });
+        } else {
+          res.status(400).send({
+            status: false,
+            message: "unable to fetch users",
+            data: [],
+          });
+        }
+      });
+    } else {
+      res.status(401).send({
+        status: false,
+        message: "Authentication failed",
+        data: {},
+      });
+    }
+  }
+);
+
 router.delete("/deleteUser/:admin_id/:user_id/:auth_key", async (req, res) => {
   const user_data = await new Promise((resolve, reject) => {
     UserModel.findOne(
@@ -939,6 +1020,78 @@ router.delete("/deleteUser/:admin_id/:user_id/:auth_key", async (req, res) => {
     });
   }
 });
+
+router.put(
+  "/updateUserSubscription/:admin_id/:auth_key/:user_id/:subscription",
+  async (req, res) => {
+    const user_data = await new Promise((resolve, reject) => {
+      UserModel.findOne(
+        { _id: req.params.user_id, auth_key: req.params.auth_key },
+        (err, user) => {
+          if (!err) {
+            resolve(user);
+          } else {
+            reject(err);
+          }
+        }
+      );
+    });
+    var set = {};
+    if (user_data) {
+      if (req.params.subscription) {
+        var current_date = new Date();
+        var year = current_date.getFullYear();
+        var month = current_date.getMonth();
+        var day = current_date.getDate();
+        var end_date = new Date(year + 1, month, day);
+        set = {
+          $set: {
+            "subscription.subscription_flag": req.params.subscription,
+            "subscription.subscription_type": "yearly payment",
+            "subscription.subscription_start_date": current_date,
+            "subscription.subscription_end_date": end_date,
+          },
+        };
+      } else {
+        set = {
+          $set: {
+            "subscription.subscription_flag": req.params.subscription,
+            "subscription.subscription_type": "",
+            "subscription.subscription_start_date": null,
+            "subscription.subscription_end_date": null,
+          },
+        };
+      }
+
+      UserModel.findOneAndUpdate(
+        { _id: req.params.user_id },
+        set,
+        { new: true },
+        (err, user) => {
+          if (!err) {
+            res.status(200).send({
+              status: true,
+              message: "Users subscription updated",
+              data: user,
+            });
+          } else {
+            res.status(401).send({
+              status: false,
+              message: "Unable to update user subscription",
+              data: {},
+            });
+          }
+        }
+      );
+    } else {
+      res.status(401).send({
+        status: false,
+        message: "Authentication failed",
+        data: {},
+      });
+    }
+  }
+);
 
 router.get("/test", async (req, res) => {
   var numbers = ["+923009498431"];
