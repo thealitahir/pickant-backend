@@ -71,7 +71,7 @@ router.get(
 );
 
 router.get("/getCategorySolutions/:category_name", async (req, res) => {
-  SolutionModel.findOne({
+  SolutionModel.find({
     category: req.params.category_name,
   })
     .populate("user")
