@@ -4,9 +4,9 @@ var mongoose = require("mongoose"),
 var UserSchema = new Schema({
   firstName: { type: String, required: true },
   lastName: { type: String },
-  identity_flag:{type:Boolean, required: false},
-  verified:{type:Boolean,required:true, default:false}, //identity verification
-  verified_by:{type:Schema.Types.ObjectId},
+  identity_flag: { type: Boolean, required: false },
+  verified: { type: Boolean, required: true, default: false }, //identity verification
+  verified_by: { type: Schema.Types.ObjectId },
   password: { type: String, required: true },
   email: { type: String, required: true },
   profile_pic: { type: String },
@@ -16,15 +16,17 @@ var UserSchema = new Schema({
   physical_address: { type: String },
   verification_code: { type: String },
   auth_key: { type: String },
-  admin:{type: Boolean, required:false},
-  wallet:{type: Schema.Types.Decimal128, required: true, default:15.00},
-  subscription:{
-    subscription_flag: {type: Schema.Types.Boolean, default:false},
-    trail_complete:{type: Schema.Types.Boolean, default:false},
-    subscription_type: {type: Schema.Types.String},
-    subscription_start_date: {type: Schema.Types.Date},
-    subscription_end_date: {type: Schema.Types.Date}
-  }
+  admin: { type: Boolean, required: false },
+  wallet: { type: Schema.Types.Decimal128, required: true, default: 15.0 },
+  subscription: {
+    subscription_flag: { type: Schema.Types.Boolean, default: false },
+    trail_complete: { type: Schema.Types.Boolean, default: false },
+    subscription_type: { type: Schema.Types.String },
+    subscription_start_date: { type: Schema.Types.Date },
+    subscription_end_date: { type: Schema.Types.Date },
+  },
+  old_flag: {type:Boolean, default:false},
+  created_at: { type: Date },
 });
 
 module.exports = mongoose.model("Users", UserSchema);
