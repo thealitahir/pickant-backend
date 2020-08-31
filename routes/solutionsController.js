@@ -70,6 +70,28 @@ router.get(
   // }
 );
 
+router.get("/getCategorySolutions/:category_name", async (req, res) => {
+  SolutionModel.findOne({
+    category: req.params.category_name,
+  })
+    .populate("user")
+    .exec((err, data) => {
+      if (!err) {
+        res.status(200).send({
+          status: true,
+          message: "solutions found",
+          data: data,
+        });
+      } else {
+        res.status(400).send({
+          status: false,
+          message: "unable to find solutions",
+          data: {},
+        });
+      }
+    });
+});
+
 router.get(
   "/getSolutionDetails/:user_id/:solution_id/:role",
   async (req, res) => {
@@ -404,7 +426,7 @@ router.put("/rejectSolution", async (req, res) => {
       { _id: req.body.solution_id },
       {
         $set: {
-          accepted_by: null
+          accepted_by: null,
         },
       },
       { new: true },
