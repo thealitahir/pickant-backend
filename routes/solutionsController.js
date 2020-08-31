@@ -70,9 +70,10 @@ router.get(
   // }
 );
 
-router.get("/getCategorySolutions/:category_name", async (req, res) => {
+router.get("/getCategorySolutions/:category_name/:role", async (req, res) => {
   SolutionModel.find({
     category: req.params.category_name,
+    user_role: req.params.role
   })
     .populate("user")
     .exec((err, data) => {
