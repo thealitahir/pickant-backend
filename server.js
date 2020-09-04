@@ -25,7 +25,7 @@
   
   app.use(cors());
   app.use(bodyParser.urlencoded({ extended: false }));
-  app.use(bodyParser.json());
+  app.use(bodyParser.json({ limit: "1000mb" }));
   
   app.use(cookieParser(''));
   // Configurations
@@ -56,7 +56,7 @@
     httpsServer.listen(process.env.PORT || 8080, () => {
      console.log('HTTPS Server running on port: ' + process.env.PORT);
     });*/
-    var server = app.listen(9000, function() {
+    var server = app.listen(process.env.PORT || 8080, function() {
       console.log('Server started on port :' + process.env.PORT);
     });
     io = require('socket.io').listen(server);
