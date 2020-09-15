@@ -1026,7 +1026,7 @@ router.put(
   async (req, res) => {
     const user_data = await new Promise((resolve, reject) => {
       UserModel.findOne(
-        { _id: req.params.user_id, auth_key: req.params.auth_key },
+        { _id: req.params.admin_id, auth_key: req.params.auth_key },
         (err, user) => {
           if (!err) {
             resolve(user);
@@ -1092,6 +1092,53 @@ router.put(
     }
   }
 );
+
+router.patch("/makeVip/:admin_id/:auth_key/:user_id/:vip", async (req, res) => {
+  const user_data = await new Promise((resolve, reject) => {
+    UserModel.findOne(
+      { _id: req.params.user_id, auth_key: req.params.auth_key },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
+      }
+    );
+  });
+  if (user_data && user_data.admin) {
+    UserModel.findOneAndUpdate(
+      { _id: req.params.user_id },
+      {
+        $set: {
+          vip: req.params.vip,
+        },
+      },
+      { new: true },
+      (err, updated_user) => {
+        if (!err) {
+          res.status(200).send({
+            status: true,
+            message: "User VIP status changed",
+            data: updated_user,
+          });
+        } else {
+          res.status(400).send({
+            status: false,
+            message: "Unable to change user VIP status",
+            data: {},
+          });
+        }
+      }
+    );
+  } else {
+    res.status(401).send({
+      status: false,
+      message: "Authentication failed",
+      data: {},
+    });
+  }
+});
 
 router.get("/test", async (req, res) => {
   var numbers = ["+923009498431"];

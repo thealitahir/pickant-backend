@@ -17,6 +17,7 @@ var UserSchema = new Schema({
   verification_code: { type: String },
   auth_key: { type: String },
   admin: { type: Boolean, required: false },
+  vip: { type: Boolean, required: true, default: false },
   wallet: { type: Schema.Types.Decimal128, required: true, default: 15.0 },
   subscription: {
     subscription_flag: { type: Schema.Types.Boolean, default: false },
