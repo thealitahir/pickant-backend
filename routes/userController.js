@@ -1096,7 +1096,7 @@ router.put(
 router.put("/makeVip/:admin_id/:auth_key/:user_id/:vip", async (req, res) => {
   const user_data = await new Promise((resolve, reject) => {
     UserModel.findOne(
-      { _id: req.params.user_id, auth_key: req.params.auth_key },
+      { _id: req.params.admin_id, auth_key: req.params.auth_key },
       (err, user) => {
         if (!err) {
           resolve(user);
@@ -1116,6 +1116,7 @@ router.put("/makeVip/:admin_id/:auth_key/:user_id/:vip", async (req, res) => {
       },
       { new: true },
       (err, updated_user) => {
+        console.log(err,updated_user)
         if (!err) {
           res.status(200).send({
             status: true,
