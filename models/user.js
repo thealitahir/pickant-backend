@@ -26,7 +26,7 @@ var UserSchema = new Schema({
     subscription_start_date: { type: Schema.Types.Date },
     subscription_end_date: { type: Schema.Types.Date },
   },
-  old_flag: {type:Boolean, default:false},
+  old_flag: { type: Boolean, default: false },
   created_at: { type: Date },
 });
 

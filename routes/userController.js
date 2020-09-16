@@ -1093,7 +1093,7 @@ router.put(
   }
 );
 
-router.patch("/makeVip/:admin_id/:auth_key/:user_id/:vip", async (req, res) => {
+router.put("/makeVip/:admin_id/:auth_key/:user_id/:vip", async (req, res) => {
   const user_data = await new Promise((resolve, reject) => {
     UserModel.findOne(
       { _id: req.params.user_id, auth_key: req.params.auth_key },
