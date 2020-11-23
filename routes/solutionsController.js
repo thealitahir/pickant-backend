@@ -16,7 +16,7 @@ var uploadFile = require("./fileUpload");
 var storage = multer.memoryStorage();
 var multipleUpload = multer({ storage: storage }).array("file");
 const mailer = require("./mailer");
-const sendNotificationToClient = require("../notify");
+const {sendNotificationToClient} = require("../notify");
 const { addNotification } = require("../routes/notificationController");
 
 router.get(
@@ -829,14 +829,22 @@ router.post("/solutionClicked", async (req, res) => {
   }
 });
 
+
 router.get("/test", async (req, res) => {
-  console.log("in test");
+  const pushNotificationOPtions = {
+    title: `Profile Viewed`,
+    message:`Someone just viewed your offer`,
+  };
+  sendNotificationToClient(["fNcXMTAAtIlDG048JrXiar:APA91bG51ka2EngumtdQiTYNXkJ3EVgUQMw7A1WvLQ3cUwhc7dli5t_SKU0PCCwuJqJB59s7ilpqmdsworYef0lUUufgTQKC8iKCKn1ykSPsI0RQt79QLNk9Q6Fp0X_bgvYaG7_Q-1CU"],pushNotificationOPtions,(response)=>{
+    console.log("RESPONSE",response);
+  })
+  // console.log("in test");
   // var s = "é, è, ë, ê, à, â, î, ï, ô, ü, ù, û, ÿ,é,ë";
-  var s = "équipement";
-  frenchToEnglish(s, (data) => {
-    console.log("returned response########", data);
-    res.send(data);
-  });
+  // var s = "équipement";
+  // frenchToEnglish(s, (data) => {
+  //   console.log("returned response########", data);
+  //   res.send(data);
+  // });
   // var query = /.*;
   /* SolutionModel.find(
     {

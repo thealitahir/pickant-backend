@@ -1,4 +1,4 @@
-const  messaging = require('./firebaseInit');
+const  {messaging} = require('./firebaseInit');
 
 const sendNotificationToClient = (tokens, data,cb) => {
   // Send a message to the device corresponding to the provided

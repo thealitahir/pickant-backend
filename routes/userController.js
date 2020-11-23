@@ -36,7 +36,7 @@ router.post("/login", async (req, res) => {
     creds.email = "x";
   }
   // creds.email = creds.email.toLowerCase();
-  const  user = await new Promise((resolve, reject) => {
+  const user = await new Promise((resolve, reject) => {
     UserModel.findOne(
       {
         $or: [{ mobile_no: creds.email }, { email: creds.email }],
@@ -59,7 +59,6 @@ router.post("/login", async (req, res) => {
       .status(401)
       .send({ status: false, message: "Invalid Credentials", data: {} });
   } else {
-    console.log(user);
     if (!user.auth_key) {
       var key = generateRandomString();
       const updated_user = await new Promise((resolve, reject) => {
@@ -73,7 +72,7 @@ router.post("/login", async (req, res) => {
           {
             $set: {
               auth_key: key,
-              $push:{device_token: creds.device_token},
+              $push: { device_token: creds.device_token },
             },
           },
           { new: true },
@@ -100,17 +99,19 @@ router.post("/login", async (req, res) => {
         });
       }
     } else {
-      UserModel.updateOne({_id: user._id},{$set:{
-        $push:{device_token:creds.device_token}
-      }},(error,updated_user)=>{
-        if(error){
+      UserModel.update({ _id: user._id }, {
+        $push: {
+          device_token: creds.device_token
+        }
+      }, (error, updated_user) => {
+        if (error) {
           res.status(421).send({
             status: false,
             message: "Unable to update device token",
             data: user,
           });
         }
-        else{
+        else {
           res.status(200).send({
             status: true,
             message: "User login successful",
