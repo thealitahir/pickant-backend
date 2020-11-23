@@ -171,4 +171,11 @@ router.put("/updateNotification", (req, res) => {
   );
 });
 
-module.exports = router;
+const addNotification = async (data,cb) => {
+  const new_notification = data;
+  new_notification.created_at = Date.now();
+  const notification = await NotificationModel.create(data);
+  cb(notification);
+}
+
+module.exports = {router,addNotification};

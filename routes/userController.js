@@ -3,16 +3,14 @@ var router = express.Router();
 var UserModel = require("../models/user");
 var SolutionModel = require("../models/solutions");
 var VerificationModel = require("../models/verification");
-const nodemailer = require("nodemailer");
 var http = require("https");
 const sgMail = require("@sendgrid/mail");
 var uploadFile = require("./fileUpload");
 const bodyParser = require("body-parser");
 const multer = require("multer");
 const stripe = require("stripe")("sk_test_4eC39HqLyjWDarjtT1zdp7dc");
-sgMail.setApiKey(
-  "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"
-);
+const mailer = require("./mailer");
+const sendNotificationToClient = require("../notify");
 /* const stripe = require("stripe")("sk_test_4eC39HqLyjWDarjtT1zdp7dc");
 stripe.charges.retrieve("ch_1GT4aH2eZvKYlo2C03o0cGY7", {
   api_key: "sk_test_4eC39HqLyjWDarjtT1zdp7dc"
@@ -38,7 +36,7 @@ router.post("/login", async (req, res) => {
     creds.email = "x";
   }
   // creds.email = creds.email.toLowerCase();
-  const user = await new Promise((resolve, reject) => {
+  const  user = await new Promise((resolve, reject) => {
     UserModel.findOne(
       {
         $or: [{ mobile_no: creds.email }, { email: creds.email }],
@@ -62,42 +60,50 @@ router.post("/login", async (req, res) => {
       .send({ status: false, message: "Invalid Credentials", data: {} });
   } else {
     console.log(user);
-    var key = generateRandomString();
-    const updated_user = await new Promise((resolve, reject) => {
-      UserModel.findOneAndUpdate(
-        {
-          $or: [
-            { mobile_no: creds.email },
-            { email: creds.email.toLowerCase() },
-          ],
-        },
-        {
-          $set: {
-            auth_key: key,
+    if (!user.auth_key) {
+      var key = generateRandomString();
+      const updated_user = await new Promise((resolve, reject) => {
+        UserModel.findOneAndUpdate(
+          {
+            $or: [
+              { mobile_no: creds.email },
+              { email: creds.email.toLowerCase() },
+            ],
           },
-        },
-        { new: true },
-        function (error, auth_user) {
-          if (!error) {
-            resolve(auth_user);
-          } else {
-            reject(error);
+          {
+            $set: {
+              auth_key: key,
+              device_token: creds.device_token,
+            },
+          },
+          { new: true },
+          function (error, auth_user) {
+            if (!error) {
+              resolve(auth_user);
+            } else {
+              reject(error);
+            }
           }
-        }
-      );
-    });
-    console.log(updated_user);
-    if (updated_user) {
+        );
+      });
+      if (updated_user) {
+        res.status(200).send({
+          status: true,
+          message: "User login successful",
+          data: updated_user,
+        });
+      } else {
+        res.status(401).send({
+          status: false,
+          message: "Unable to save auth token",
+          data: {},
+        });
+      }
+    } else {
       res.status(200).send({
         status: true,
         message: "User login successful",
-        data: updated_user,
-      });
-    } else {
-      res.status(401).send({
-        status: false,
-        message: "Unable to save auth token",
-        data: {},
+        data: user,
       });
     }
   }
@@ -667,9 +673,6 @@ router.put("/verifyUser", async (req, res) => {
 router.put("/updateUser", multipleUpload, async (req, res) => {
   console.log("upadte user");
   const files = req.files;
-  console.log(req.files);
-  console.log("+++++++++++++++");
-  console.log(JSON.parse(req.body.update_data));
   var update_data = JSON.parse(req.body.update_data);
   const fileUploadResponse = await new Promise((resolve, reject) => {
     uploadFile(files, "users/", (err, data) => {
@@ -694,9 +697,7 @@ router.put("/updateUser", multipleUpload, async (req, res) => {
         );
       });
       if (valid_user) {
-        console.log(fileUploadResponse.locations[0]);
         update_data.profile_pic = fileUploadResponse.locations[0];
-        console.log(update_data);
         const updated_user = await new Promise((resolve, reject) => {
           UserModel.findOneAndUpdate(
             { _id: req.body.user_id },
@@ -739,6 +740,49 @@ router.put("/updateUser", multipleUpload, async (req, res) => {
         data: {},
       });
     });
+});
+
+router.patch("/updateCountry", async (req, res) => {
+  var valid_user = await new Promise((resolve, reject) => {
+    UserModel.findOne(
+      { _id: req.body.user_id, auth_key: req.body.auth_key },
+      (err, user) => {
+        if (!err) {
+          resolve(user);
+        } else {
+          reject(err);
+        }
+      }
+    );
+  });
+  if (valid_user) {
+    UserModel.updateOne(
+      { _id: req.body.user_id },
+      { $set: { country: req.body.country } },
+      { new: true },
+      (error, updated_user) => {
+        if (updated_user) {
+          res.status(200).send({
+            status: true,
+            message: "User updated successfuly",
+            data: updated_user,
+          });
+        } else {
+          res.status(409).send({
+            status: false,
+            message: "Unable to update user",
+            data: error,
+          });
+        }
+      }
+    );
+  } else {
+    res.status(401).send({
+      status: false,
+      message: "Authentication failed",
+      data: {},
+    });
+  }
 });
 
 router.post("/updateSubscription", async (req, res) => {
@@ -1116,7 +1160,7 @@ router.put("/makeVip/:admin_id/:auth_key/:user_id/:vip", async (req, res) => {
       },
       { new: true },
       (err, updated_user) => {
-        console.log(err,updated_user)
+        console.log(err, updated_user);
         if (!err) {
           res.status(200).send({
             status: true,
@@ -1142,7 +1186,22 @@ router.put("/makeVip/:admin_id/:auth_key/:user_id/:vip", async (req, res) => {
 });
 
 router.get("/test", async (req, res) => {
-  var numbers = ["+923009498431"];
+  var mailOptions = {
+    to: "thealitahir431@gmail.com",
+    subject: "Confirmation Instructions",
+    text: `Activation Code for Group Buy Near me App is`,
+  };
+  mailer.sendMail(mailOptions, function (err, info) {
+    if (err) {
+      console.log("Erroorrrrrrrrrrr");
+      console.log(err);
+      console.log(err.response.body);
+    } else {
+      console.log("Nooooooooooooooooo Erroorrrrrrrrrrr");
+      console.log(info);
+    }
+  });
+  /* var numbers = [""];
   var message = "hello from the other side";
   const client2 = require("twilio")(
     "ACa0ffacadbcf88c4dcc6c4fbf17df3e17",
@@ -1175,7 +1234,7 @@ router.get("/test", async (req, res) => {
         message: "Invalid number found",
         data: err,
       });
-    });
+    }); */
   /* UserModel.find({ admin: true }, (error, users) => {
     if (!error) {
       var numbers = [];

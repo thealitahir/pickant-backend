@@ -35,7 +35,7 @@
   app.use('/subCategory',subCategory);
   app.use('/file', fileRoute);
   app.use('/payment', payment);
-  app.use('/notify', notification);
+  app.use('/notify', notification.router);
   app.use(express.static(__dirname, { dotfiles: 'allow' } ));
   var opt = {
     useNewUrlParser: true

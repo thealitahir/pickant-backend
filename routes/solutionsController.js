@@ -15,6 +15,9 @@ var uploadFile = require("./fileUpload");
 
 var storage = multer.memoryStorage();
 var multipleUpload = multer({ storage: storage }).array("file");
+const mailer = require("./mailer");
+const sendNotificationToClient = require("../notify");
+const { addNotification } = require("../routes/notificationController");
 
 router.get(
   "/getAllSolutions/:role",
@@ -73,7 +76,7 @@ router.get(
 router.get("/getCategorySolutions/:category_name/:role", async (req, res) => {
   SolutionModel.find({
     category: req.params.category_name,
-    user_role: req.params.role
+    user_role: req.params.role,
   })
     .populate("user")
     .exec((err, data) => {
@@ -748,6 +751,79 @@ router.put("/updateSolutionStatus", async (req, res) => {
     res.status(401).send({
       status: false,
       message: "Authentication failed",
+      data: {},
+    });
+  }
+});
+
+router.post("/solutionClicked", async (req, res) => {
+  var valid_user = await new Promise((resolve, reject) => {
+    UserModel.findOne({ _id: solution.user_id }, (err, user) => {
+      if (!err) {
+        console.log("USER", user);
+        resolve(user);
+      } else {
+        reject(err);
+      }
+    });
+  });
+  if (valid_user && valid_user.device_token) {
+    var notificationOptions = {
+      message_en: "Someone viewed your offer",
+      message_fr: "",
+      status: "true",
+      user_id: valid_user._id,
+    };
+    addNotification(notificationOptions, (data) => {
+      if (data) {
+        var mailOptions = {
+          to: valid_user.email,
+          subject: "PickantApp Notification",
+          text: `Hi ${firstName}, someone just viewed your offer`,
+        };
+        mailer.sendMail(mailOptions, function (err, info) {
+          if (err) {
+            console.log(err.response.body);
+            res.status(409).send({
+              status: false,
+              message: "Error while sending email",
+              data: {},
+            });
+          } else {
+            const pushNotificationOPtions = {
+              title: `Profile Viewed`,
+              message:`Someone just viewed your offer`,
+            };
+            var tokens = [valid_user.device_token];
+            sendNotificationToClient(tokens, notificationData,(response)=>{
+              console.log("back from push notification", response);
+              if(response){
+                res.status(200).send({
+                  status: true,
+                  message: "All notifications sent",
+                });
+              }else{
+                res.status(409).send({
+                  status: false,
+                  message: "Error while sending push notification",
+                  data: {},
+                });
+              }
+            });
+          }
+        });
+      }else{
+        res.status(409).send({
+          status: false,
+          message: "Error while sending in app notification",
+          data: {},
+        });
+      }
+    });
+  } else {
+    res.status(401).send({
+      status: false,
+      message: "User not found",
       data: {},
     });
   }
