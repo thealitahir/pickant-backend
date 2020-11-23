@@ -73,7 +73,7 @@ router.post("/login", async (req, res) => {
           {
             $set: {
               auth_key: key,
-              device_token: creds.device_token,
+              $push:{device_token: creds.device_token},
             },
           },
           { new: true },

@@ -28,7 +28,7 @@ var UserSchema = new Schema({
     subscription_end_date: { type: Schema.Types.Date },
   },
   old_flag: { type: Boolean, default: false },
-  device_token:{type: String},
+  device_token:[{type: String}],
   created_at: { type: Date },
 });
 
