@@ -100,11 +100,24 @@ router.post("/login", async (req, res) => {
         });
       }
     } else {
-      res.status(200).send({
-        status: true,
-        message: "User login successful",
-        data: user,
-      });
+      UserModel.updateOne({_id: user._id},{$set:{
+        $push:{device_token:creds.device_token}
+      }},(error,updated_user)=>{
+        if(error){
+          res.status(421).send({
+            status: false,
+            message: "Unable to update device token",
+            data: user,
+          });
+        }
+        else{
+          res.status(200).send({
+            status: true,
+            message: "User login successful",
+            data: user,
+          });
+        }
+      })
     }
   }
 });
