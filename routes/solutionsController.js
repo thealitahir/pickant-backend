@@ -770,7 +770,7 @@ router.post("/solutionClicked", async (req, res) => {
   if (valid_user && valid_user.device_token) {
     var notificationOptions = {
       message_en: "Someone viewed your offer",
-      message_fr: "",
+      message_fr: "Quelqu'un a consulté votre offre",
       status: "true",
       user_id: valid_user._id,
     };
