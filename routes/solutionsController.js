@@ -16,7 +16,7 @@ var uploadFile = require("./fileUpload");
 var storage = multer.memoryStorage();
 var multipleUpload = multer({ storage: storage }).array("file");
 const mailer = require("./mailer");
-const {sendNotificationToClient} = require("../notify");
+const { sendNotificationToClient } = require("../notify");
 const { addNotification } = require("../routes/notificationController");
 
 router.get(
@@ -758,7 +758,7 @@ router.put("/updateSolutionStatus", async (req, res) => {
 
 router.post("/solutionClicked", async (req, res) => {
   var valid_user = await new Promise((resolve, reject) => {
-    UserModel.findOne({ _id: solution.user_id }, (err, user) => {
+    UserModel.findOne({ _id: req.body.user_id }, (err, user) => {
       if (!err) {
         console.log("USER", user);
         resolve(user);
@@ -779,7 +779,7 @@ router.post("/solutionClicked", async (req, res) => {
         var mailOptions = {
           to: valid_user.email,
           subject: "PickantApp Notification",
-          text: `Hi ${firstName}, someone just viewed your offer`,
+          text: `Hi, someone just viewed your offer`,
         };
         mailer.sendMail(mailOptions, function (err, info) {
           if (err) {
@@ -792,17 +792,17 @@ router.post("/solutionClicked", async (req, res) => {
           } else {
             const pushNotificationOPtions = {
               title: `Profile Viewed`,
-              message:`Someone just viewed your offer`,
+              message: `Someone just viewed your offer`,
             };
-            var tokens = [valid_user.device_token];
-            sendNotificationToClient(tokens, notificationData,(response)=>{
+            var tokens = valid_user.device_token;
+            sendNotificationToClient(tokens,pushNotificationOPtions, (response) => {
               console.log("back from push notification", response);
-              if(response){
+              if (response) {
                 res.status(200).send({
                   status: true,
                   message: "All notifications sent",
                 });
-              }else{
+              } else {
                 res.status(409).send({
                   status: false,
                   message: "Error while sending push notification",
@@ -812,7 +812,7 @@ router.post("/solutionClicked", async (req, res) => {
             });
           }
         });
-      }else{
+      } else {
         res.status(409).send({
           status: false,
           message: "Error while sending in app notification",
@@ -833,10 +833,10 @@ router.post("/solutionClicked", async (req, res) => {
 router.get("/test", async (req, res) => {
   const pushNotificationOPtions = {
     title: `Profile Viewed`,
-    message:`Someone just viewed your offer`,
+    message: `Someone just viewed your offer`,
   };
-  sendNotificationToClient(["fNcXMTAAtIlDG048JrXiar:APA91bG51ka2EngumtdQiTYNXkJ3EVgUQMw7A1WvLQ3cUwhc7dli5t_SKU0PCCwuJqJB59s7ilpqmdsworYef0lUUufgTQKC8iKCKn1ykSPsI0RQt79QLNk9Q6Fp0X_bgvYaG7_Q-1CU"],pushNotificationOPtions,(response)=>{
-    console.log("RESPONSE",response);
+  sendNotificationToClient(["chPP5GpddsquPU6c_6xSc8:APA91bE4SCf1hWtotfZ_ZUYXBXxjLGlrgUpzJUHv77eN5OICJv4rqEUjfBuoO619uYWoIZt--CBlB4QI1vPFxVOElGttqpqglkiW8ksVNy_unjWeThDSJlBd1Cq4dV9xqye3AwOtrjEQ"], pushNotificationOPtions, (response) => {
+    console.log("RESPONSE", response);
   })
   // console.log("in test");
   // var s = "é, è, ë, ê, à, â, î, ï, ô, ü, ù, û, ÿ,é,ë";
