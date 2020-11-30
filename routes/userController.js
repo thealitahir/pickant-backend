@@ -759,7 +759,7 @@ router.put("/updateUser", multipleUpload, async (req, res) => {
 router.patch("/updateCountry", async (req, res) => {
   var valid_user = await new Promise((resolve, reject) => {
     UserModel.findOne(
-      { _id: req.body.user_id, auth_key: req.body.auth_key },
+      { _id: req.body.user_id },
       (err, user) => {
         if (!err) {
           resolve(user);

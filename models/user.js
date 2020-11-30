@@ -14,7 +14,7 @@ var UserSchema = new Schema({
   mobile_no: { type: String, required: true },
   location: { lat: Schema.Types.Decimal128, lng: Schema.Types.Decimal128 },
   physical_address: { type: String },
-  country: {type: String, required: true},
+  country: { type: String, required: true },
   verification_code: { type: String },
   auth_key: { type: String },
   admin: { type: Boolean, required: false },
@@ -28,7 +28,7 @@ var UserSchema = new Schema({
     subscription_end_date: { type: Schema.Types.Date },
   },
   old_flag: { type: Boolean, default: false },
-  device_token:[{type: String}],
+  device_token: [{ type: String }],
   created_at: { type: Date },
 });
 
