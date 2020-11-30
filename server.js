@@ -23,7 +23,7 @@
     console.log(url);
   })();
   
-  app.use('*', cors());
+  app.use({ mode: 'opaque'});
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use(bodyParser.json({ limit: "1000mb" }));
   
