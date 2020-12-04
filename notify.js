@@ -1,8 +1,15 @@
-const  {messaging} = require('./firebaseInit');
+const { messaging } = require('./firebaseInit');
 
-const sendNotificationToClient = (tokens, data,cb) => {
+const sendNotificationToClient = async (tokens, data, cb) => {
   // Send a message to the device corresponding to the provided
   // registration token.
+//   var newTokensArray = [];
+//  await tokens.map((token) => {
+//     if (token !== null || token !==" ") {
+//       newTokensArray.push(token);
+//     }
+//   })
+//   console.log(newTokensArray)
   messaging
     .sendMulticast({ tokens, data })
     .then(response => {

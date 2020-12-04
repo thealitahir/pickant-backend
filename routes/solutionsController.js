@@ -460,9 +460,9 @@ router.put("/rejectSolution", async (req, res) => {
 });
 
 router.post("/addSolution", multipleUpload, async (req, res) => {
-  console.log("in add solution");
+  console.log("in add solution")
+  console.log("KKKKDKKKKKDKDKDKDKDKDKKDKDKDKDKDKDKKDKDKDKDKDKhttps://api.pickantapp.com");
   const files = req.files;
-  console.log(req.files);
   var solution = new SolutionModel();
   var solution_details = JSON.parse(req.body.new_solution);
   console.log(solution);
@@ -537,6 +537,73 @@ router.post("/addSolution", multipleUpload, async (req, res) => {
         });
         if (saved_solution) {
           console.log(saved_solution);
+          const usersWithSameCountry = await new Promise((resolve, reject) => {
+            UserModel.find({ country: valid_user.country }, (err, user) => {
+              if (!err) {
+                resolve(user);
+              } else {
+                reject(err);
+              }
+            })
+          });
+          if (usersWithSameCountry) {
+            usersWithSameCountry.map((user) => {
+              // if (valid_user && valid_user.device_token) {
+              var notificationOptions = {
+                message_en: "Someone has published an offer in your country",
+                message_fr: "Quelqu'un a publié une offre dans votre pays",
+                status: "true",
+                user_id: user._id,
+              };
+              addNotification(notificationOptions, (data) => {
+                if (data) {
+                  var mailOptions = {
+                    to: user.email,
+                    subject: "PickantApp Notification",
+                    text: `Hi, Someone has published an offer in your country`,
+                  };
+                  mailer.sendMail(mailOptions, function (err, info) {
+                    if (err) {
+                      res.status(409).send({
+                        status: false,
+                        message: "Error while sending email",
+                        data: {},
+                      });
+                    } else {
+                      const pushNotificationOPtions = {
+                        title: `Offer Published`,
+                        message: `Someone has published an offer in your country`,
+                      };
+                      var tokens = user.device_token;
+
+                      sendNotificationToClient(tokens, pushNotificationOPtions, (response) => {
+                        console.log("back from push notification", response);
+                        if (response) {
+                          res.status(200).send({
+                            status: true,
+                            message: "All notifications sent",
+                          });
+                        } else {
+                          res.status(409).send({
+                            status: false,
+                            message: "Error while sending push notification",
+                            data: {},
+                          });
+                        }
+                      });
+                    }
+                  });
+                } else {
+                  res.status(409).send({
+                    status: false,
+                    message: "Error while sending in app notification",
+                    data: {},
+                  });
+                }
+              });
+            })
+          }
+
           res.status(200).send({
             status: true,
             message: "solution saved",
@@ -795,7 +862,7 @@ router.post("/solutionClicked", async (req, res) => {
               message: `Someone just viewed your offer`,
             };
             var tokens = valid_user.device_token;
-            sendNotificationToClient(tokens,pushNotificationOPtions, (response) => {
+            sendNotificationToClient(tokens, pushNotificationOPtions, (response) => {
               console.log("back from push notification", response);
               if (response) {
                 res.status(200).send({
